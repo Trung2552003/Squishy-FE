@@ -1,0 +1,9 @@
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/cms/login-logs/components/columns')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <div>Hello "/cms/login-logs/components/columns"!</div>
+}
