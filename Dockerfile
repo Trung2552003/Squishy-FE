@@ -16,7 +16,9 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_PUBLIC_API_URL=$VITE_PUBLIC_API_URL \
     VITE_PREORDER_SITE_URL=$VITE_PREORDER_SITE_URL
 
-RUN npm run build
+# src/routeTree.gen.ts không có trong git (.gitignore): vite build sinh ra nó trước,
+# sau đó mới kiểm tra kiểu TypeScript (giống "npm run build" nhưng đổi thứ tự)
+RUN npx vite build && npx tsc -b
 
 # ===== Serve =====
 FROM nginx:1.27-alpine
