@@ -8,9 +8,9 @@
 
 @theme inline {
 
-    --font-heading: 'Roboto', sans-serif;
+    --font-heading: 'Plus Jakarta Sans', 'Quicksand', sans-serif;
 
-    --font-sans: 'Roboto', sans-serif;
+    --font-sans: 'Plus Jakarta Sans', 'Quicksand', sans-serif;
 
     --color-sidebar-ring: var(--sidebar-ring);
 
@@ -224,11 +224,410 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
-    @apply bg-background text-foreground;
-    }
+    @apply bg-[#FAF7EE] text-foreground font-sans;
+  }
   html {
     @apply font-sans;
-    }
+  }
 }
+
+/* Doodle & Neo-Brutalism Utilities (Vẽ Zì Đó / Comic Kawaii Vibe) */
+.doodle-bg {
+  background-color: #FAF7EE;
+  background-image: radial-gradient(#d1ccc0 1.2px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+
+.doodle-card {
+  background-color: #ffffff;
+  border: 2px solid #1e293b;
+  border-radius: 1rem;
+  box-shadow: 3px 3px 0px #1e293b;
+}
+
+.doodle-card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.doodle-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 5px 5px 0px #1e293b;
+}
+
+.doodle-btn {
+  border: 2px solid #000000;
+  border-radius: 0.875rem;
+  font-weight: 800;
+  box-shadow: 3px 3px 0px #000000;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+.doodle-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000;
+}
+.doodle-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.doodle-input {
+  border: 2px solid #000000 !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  background-color: #ffffff !important;
+}
+.doodle-input:focus {
+  outline: none !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+
+.doodle-badge {
+  border: 1.5px solid #000000;
+  border-radius: 0.5rem;
+  font-weight: 800;
+  font-size: 0.75rem;
+  box-shadow: 1.5px 1.5px 0px #000000;
+}
+/* ===== Tiện ích bổ sung (responsive / mobile) ===== */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Viền 1.5px dùng xuyên suốt giao diện doodle */
+.border-1\.5 {
+  border-width: 1.5px;
+}
+
+/* Ẩn thanh cuộn nhưng vẫn cuộn được (dải danh mục, tab ngang) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thanh cuộn mảnh cho vùng cuộn nội bộ */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Chừa khoảng an toàn cho tai thỏ / thanh home trên điện thoại */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.bottom-safe {
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Tắt viền xanh mặc định khi chạm trên mobile, giữ focus khi dùng bàn phím */
+.doodle-btn:focus-visible,
+.doodle-input:focus-visible {
+  outline: 2px dashed #000;
+  outline-offset: 2px;
+}
+
+.doodle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+/* Trên màn hình cảm ứng không có hover: bỏ hiệu ứng nhấc thẻ để tránh "kẹt" trạng thái */
+@media (hover: none) {
+  .doodle-card-hover:hover {
+    transform: none;
+    box-shadow: 3px 3px 0px #1e293b;
+  }
+  .doodle-btn:hover {
+    transform: none;
+    box-shadow: 3px 3px 0px #000000;
+  }
+  .doodle-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #000000;
+  }
+}
+
+/* Màn hình nhỏ: giảm bóng đổ cho đỡ rối mắt */
+@media (max-width: 640px) {
+  .doodle-card {
+    box-shadow: 2px 2px 0px #1e293b;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== In hóa đơn / phiếu đóng hàng: chỉ in nội dung hộp thoại đang mở ===== */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  [data-slot="dialog-content"],
+  [data-slot="dialog-content"] * {
+    visibility: visible !important;
+  }
+  [data-slot="dialog-content"] {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  [data-slot="dialog-overlay"],
+  .print-hidden,
+  [data-slot="dialog-close"] {
+    display: none !important;
+  }
+}
+
+/* ===== Phong cách hoạt hình: linh vật, họa tiết, chuyển động mềm dẻo ===== */
+
+/* Nền họa tiết doodle nhạt: sao, tim, mây, dấu cộng */
+.doodle-pattern {
+  background-color: #FAF7EE;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%23ddd2bc' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M26 18l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z'/%3E%3Cpath d='M132 38c-3-4.5-10-2.5-9 3 1 4.5 9 9 9 9s8-4.5 9-9c1-5.5-6-7.5-9-3z'/%3E%3Cpath d='M38 128c0-5.5 4.5-8.5 9-7.5 1.5-4.5 9-5.5 11 0 4.5 0 6.5 3.5 5.5 7.5z'/%3E%3Ccircle cx='146' cy='132' r='3.5'/%3E%3Cpath d='M92 84h9M96.5 79.5v9'/%3E%3Cpath d='M104 160q4.5-4.5 9 0t9 0'/%3E%3C/g%3E%3Cg fill='%23ddd2bc'%3E%3Ccircle cx='12' cy='86' r='1.8'/%3E%3Ccircle cx='168' cy='86' r='1.8'/%3E%3Ccircle cx='80' cy='22' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* Sidebar nổi như một miếng sticker */
+.cms-sidebar [data-slot="sidebar-inner"],
+[data-slot="sidebar"][data-mobile="true"] {
+  background-color: #FFFDF5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='140' viewBox='0 0 120 140'%3E%3Cg fill='none' stroke='%23efe6d2' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 20l2 4 4.4.6-3.2 3.1.8 4.4-4-2.1-4 2.1.8-4.4-3.2-3.1 4.4-.6z'/%3E%3Cpath d='M92 92c-2.4-3.6-8-2-7.2 2.4.8 3.6 7.2 7.2 7.2 7.2s6.4-3.6 7.2-7.2c.8-4.4-4.8-6-7.2-2.4z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 120px 140px;
+}
+.cms-sidebar [data-slot="sidebar-inner"] {
+  border: 2px solid #1e293b;
+  border-radius: 1.75rem;
+  box-shadow: 4px 4px 0 #1e293b;
+  overflow: hidden;
+}
+
+/* Bong bóng thoại của Mochi */
+.mochi-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-right: 2px solid #1e293b;
+  border-bottom: 2px solid #1e293b;
+  transform: translateX(-50%) rotate(45deg);
+}
+.mochi-bubble {
+  animation: bubble-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+/* Thanh trên có mép dưới lượn sóng */
+.scallop-bottom {
+  position: relative;
+  background-color: #FFFDF5;
+}
+.scallop-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 10px;
+  pointer-events: none;
+  background: radial-gradient(circle at 10px 0, #FFFDF5 9px, transparent 9.6px) repeat-x;
+  background-size: 20px 10px;
+  filter: drop-shadow(0 2px 0 rgba(30, 41, 59, 0.12));
+}
+
+/* Icon menu lắc nhẹ khi rê chuột */
+[data-sidebar="menu-button"]:hover .nav-bubble,
+[data-sidebar="menu-sub-button"]:hover .nav-bubble {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+/* Bấm nút: xẹp xuống rồi nảy lên như bóp squishy */
+.doodle-btn:active:not(:disabled),
+[data-slot="button"]:active:not(:disabled) {
+  animation: squish 0.35s ease-out;
+}
+
+/* Thẻ nội dung nảy vào lần lượt khi trang mở */
+.doodle-card {
+  animation: pop-in 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+}
+:is(.grid, .divide-y) > .doodle-card:nth-child(2) { animation-delay: 40ms; }
+:is(.grid, .divide-y) > .doodle-card:nth-child(3) { animation-delay: 80ms; }
+:is(.grid, .divide-y) > .doodle-card:nth-child(4) { animation-delay: 120ms; }
+:is(.grid, .divide-y) > .doodle-card:nth-child(5) { animation-delay: 160ms; }
+:is(.grid, .divide-y) > .doodle-card:nth-child(6) { animation-delay: 200ms; }
+:is(.grid, .divide-y) > .doodle-card:nth-child(n+7) { animation-delay: 240ms; }
+
+/* Linh vật */
+.mochi-bob {
+  transform-origin: 50% 95%;
+  animation: mochi-bob 3s ease-in-out infinite;
+}
+.mochi-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mochi-blink 4.5s infinite;
+}
+.mochi-zzz {
+  animation: mochi-zzz 2.4s ease-in-out infinite;
+}
+.mochi-jump {
+  animation: mochi-jump 0.6s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.mochi-hop {
+  animation: mochi-hop 0.7s ease-in-out infinite;
+}
+.twinkle {
+  animation: twinkle 2.2s ease-in-out infinite;
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes squish {
+  0% { transform: scale(1, 1); }
+  35% { transform: scale(1.07, 0.88); }
+  65% { transform: scale(0.96, 1.05); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes wiggle {
+  0%, 100% { rotate: 0deg; }
+  25% { rotate: -14deg; }
+  75% { rotate: 14deg; }
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mochi-bob {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-3px) scale(1.03, 0.97); }
+}
+@keyframes mochi-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+@keyframes mochi-zzz {
+  0%, 100% { opacity: 0.2; transform: translate(0, 0); }
+  50% { opacity: 1; transform: translate(3px, -5px); }
+}
+@keyframes mochi-jump {
+  0% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-14px) scale(0.92, 1.08); }
+  70% { transform: translateY(0) scale(1.1, 0.88); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+@keyframes mochi-hop {
+  0%, 100% { transform: translateY(0) scale(1.06, 0.94); }
+  50% { transform: translateY(-10px) scale(0.96, 1.04); }
+}
+@keyframes twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(0.75) rotate(20deg); opacity: 0.6; }
+}
+
+@media print {
+  .doodle-card { animation: none !important; }
+}
+
+/* ===== Ô chọn (select) đồng bộ phong cách hoạt hình =====
+   Không nằm trong @layer nên thắng các class Tailwind; chiều cao/độ rộng vẫn đặt bằng class ở từng chỗ. */
+select:not([multiple]),
+[data-slot="select-trigger"] {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid #1e293b;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  padding-left: 0.75rem;
+  box-shadow: 2px 2px 0 #1e293b;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+select:not([multiple]) {
+  padding-right: 2.25rem;
+  text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath fill='none' stroke='%231e293b' stroke-linecap='round' stroke-linejoin='round' stroke-width='28' d='M208 96l-80 80-80-80'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+}
+select:not([multiple]):hover,
+[data-slot="select-trigger"]:hover {
+  background-color: #fffbeb;
+}
+select:not([multiple]):focus-visible,
+[data-slot="select-trigger"]:focus-visible {
+  outline: 2px dashed #1e293b;
+  outline-offset: 2px;
+  box-shadow: 3px 3px 0 #1e293b;
+}
+select:not([multiple]):disabled,
+[data-slot="select-trigger"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+}
+select option {
+  font-weight: 500;
+  color: #0f172a;
+  background-color: #ffffff;
+}
+[data-slot="select-content"] {
+  border: 2px solid #1e293b;
+  border-radius: 0.75rem;
+  box-shadow: 3px 3px 0 #1e293b;
+}
+.dark select:not([multiple]),
+.dark [data-slot="select-trigger"],
+.dark select option {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #94a3b8;
+}
+.dark select:not([multiple]) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath fill='none' stroke='%23f1f5f9' stroke-linecap='round' stroke-linejoin='round' stroke-width='28' d='M208 96l-80 80-80-80'/%3E%3C/svg%3E");
+}
+
+/* Bảng phải cuộn ngang trên màn hình nhỏ: cột cuối (Thao tác / Chi tiết) dính bên phải để luôn bấm được */
+.table-sticky-last th:last-child,
+.table-sticky-last td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+}
+.table-sticky-last th:last-child { background-color: #f8fafc; }
+.table-sticky-last td:last-child {
+  background-color: #ffffff;
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.25);
+}
+.table-sticky-last tr:hover td:last-child { background-color: #f8fafc; }

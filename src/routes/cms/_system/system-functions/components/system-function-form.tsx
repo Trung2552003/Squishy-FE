@@ -293,7 +293,7 @@ export function SystemFunctionForm({
                     <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="h-8 rounded-lg w-full">
-                          <SelectValue placeholder="Chọn loại chức năng" />
+                          <SelectValue placeholder="Chọn loại" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

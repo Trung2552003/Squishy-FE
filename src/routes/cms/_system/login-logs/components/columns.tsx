@@ -86,11 +86,11 @@ export const getColumns = ({ onDelete, checkPermission }: ColumnProps): ColumnDe
       return (
         <div className="flex justify-center">
           {isSuccess ? (
-            <Badge className="px-3 py-3 text-xs bg-emerald-500/15 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 font-medium hover:bg-emerald-500/20">
+            <Badge className="px-2 py-0.5 text-[10.5px] bg-emerald-500/15 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 font-semibold hover:bg-emerald-500/20">
               Thành công
             </Badge>
           ) : (
-            <Badge className="px-3 py-3 text-xs bg-rose-500/15 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30 font-medium hover:bg-rose-500/20">
+            <Badge className="px-2 py-0.5 text-[10.5px] bg-rose-500/15 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30 font-semibold hover:bg-rose-500/20">
               Thất bại
             </Badge>
           )}

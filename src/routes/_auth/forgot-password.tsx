@@ -117,9 +117,9 @@ function ForgotPassword() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-      <Card className="border-border bg-background/80 backdrop-blur-xl text-foreground shadow-2xl w-full p-6">
+      <Card className="bg-white text-foreground w-full p-2 sm:p-6 border-2 sm:border-[2.5px] border-black rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000]">
         <CardHeader className="space-y-2 text-center mb-4">
-          <CardTitle className="text-3xl font-bold tracking-tight">Khôi phục mật khẩu</CardTitle>
+          <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight">Khôi phục mật khẩu</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             {step === 1 && "Nhập email của bạn để nhận mã xác nhận"}
             {step === 2 && "Nhập mã xác nhận 6 số vừa được gửi đến email"}

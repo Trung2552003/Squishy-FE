@@ -49,6 +49,9 @@ interface DataTableProps<TData, TValue> {
   filterElements?: React.ReactNode
 }
 
+// Cột "Thao tác" dính bên phải khi bảng cuộn ngang trên màn hình nhỏ, để nút Sửa/Xóa luôn bấm được
+const STICKY_ACTIONS = 'sticky right-0 z-[1] shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.25)] md:shadow-none'
+
 export function DataTable<TData, TValue>({
   columns,
   data,
@@ -107,14 +110,14 @@ export function DataTable<TData, TValue>({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-2 flex-wrap">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto flex-wrap">
-          <div className="relative w-full sm:w-80">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 w-4 h-4" />
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2.5 mb-1.5 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full lg:w-auto flex-wrap">
+          <div className="relative w-full sm:w-72">
+            <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 w-3.5 h-3.5" />
             <Input
-              placeholder="Tìm kiếm"
+              placeholder="Tìm kiếm..."
               value={keyword !== undefined ? keyword : (globalFilter ?? '')}
               onChange={(event) => {
                 if (onKeywordChange) {
@@ -123,25 +126,25 @@ export function DataTable<TData, TValue>({
                   setGlobalFilter(event.target.value)
                 }
               }}
-              className="pl-9 h-10 w-full"
+              className="pl-8 h-9 text-base sm:text-sm w-full rounded-lg"
             />
           </div>
           {searchActions}
         </div>
         
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {!!onDeleteBulk && selectedIds.length > 0 && (
-            <div className="flex items-center gap-3 bg-red-50 dark:bg-red-500/10 text-red-600 px-3 h-10 rounded-lg border border-red-200 dark:border-red-500/30">
-              <span className="text-sm font-medium">Đã chọn {selectedIds.length} mục</span>
+            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 text-red-600 px-2.5 h-9 rounded-lg border border-red-200 dark:border-red-500/30 text-sm">
+              <span className="font-semibold">Đã chọn {selectedIds.length}</span>
               <Button 
                 variant="destructive" 
                 size="sm" 
                 onClick={() => setConfirmBulkOpen(true)}
                 disabled={isDeletingBulk}
-                className="h-8 rounded-lg shadow-sm"
+                className="h-7 text-sm px-2 rounded-md shadow-sm"
               >
-                {isDeletingBulk ? <CircleNotchIcon className="w-4 h-4 mr-2 animate-spin" /> : <TrashIcon className="w-4 h-4 mr-2" />}
-                Xóa mục đã chọn
+                {isDeletingBulk ? <CircleNotchIcon className="w-3.5 h-3.5 mr-1 animate-spin" /> : <TrashIcon className="w-3.5 h-3.5 mr-1" />}
+                Xóa
               </Button>
             </div>
           )}
@@ -150,12 +153,12 @@ export function DataTable<TData, TValue>({
       </div>
 
       {filterElements && (
-        <div className="mb-4 flex flex-col sm:flex-row items-center gap-3 flex-wrap">
+        <div className="mb-3 flex flex-col sm:flex-row items-center gap-2 flex-wrap">
           {filterElements}
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -164,9 +167,9 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead 
                       key={header.id} 
-                      className={`text-muted-foreground font-semibold text-[15px] h-11 border-r border-border last:border-r-0 ${
-                        (header.column.columnDef.meta as any)?.className || ''
-                      }`}
+                      className={`text-muted-foreground font-bold text-xs uppercase tracking-wide h-10 px-2.5 border-r border-border last:border-r-0 ${
+                        header.column.id === 'actions' ? STICKY_ACTIONS + ' bg-muted' : ''
+                      } ${(header.column.columnDef.meta as any)?.className || ''}`}
                     >
                       {header.isPlaceholder ? null : (
                         <div
@@ -180,10 +183,10 @@ export function DataTable<TData, TValue>({
                           {header.column.getCanSort() && (
                             <span className="text-muted-foreground/70">
                               {{
-                                asc: <CaretUpIcon weight="bold" />,
-                                desc: <CaretDownIcon weight="bold" />,
+                                asc: <CaretUpIcon weight="bold" className="w-3 h-3" />,
+                                desc: <CaretDownIcon weight="bold" className="w-3 h-3" />,
                               }[header.column.getIsSorted() as string] ?? (
-                                <ArrowsDownUpIcon weight="bold" />
+                                <ArrowsDownUpIcon weight="bold" className="w-3 h-3" />
                               )}
                             </span>
                           )}
@@ -204,7 +207,7 @@ export function DataTable<TData, TValue>({
                   className="hover:bg-muted/30 border-border/50 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={`py-3 text-[15px] border-r border-border last:border-r-0 ${(cell.column.columnDef.meta as any)?.className || ''}`}>
+                    <TableCell key={cell.id} className={`py-2.5 px-3 text-sm border-r border-border last:border-r-0 ${cell.column.id === 'actions' ? STICKY_ACTIONS + ' bg-card' : ''} ${(cell.column.columnDef.meta as any)?.className || ''}`}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -212,7 +215,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={columns.length} className="h-28 text-center text-sm text-muted-foreground">
                   Không có dữ liệu.
                 </TableCell>
               </TableRow>
@@ -230,9 +233,9 @@ export function DataTable<TData, TValue>({
         onConfirm={handleBulkDelete}
       />
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 pt-2 pb-4">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 pt-1 pb-2 text-sm">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="flex items-center gap-1.5">
             <span>Hiển thị</span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
@@ -240,12 +243,12 @@ export function DataTable<TData, TValue>({
                 table.setPageSize(Number(value))
               }}
             >
-              <SelectTrigger className="h-8 w-17.5 rounded-lg shadow-sm border-border focus:ring-indigo-500">
+              <SelectTrigger className="h-8 w-18 text-sm rounded-md shadow-sm border-border focus:ring-indigo-500">
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
-              <SelectContent className="rounded-lg min-w-17.5">
+              <SelectContent className="rounded-lg min-w-16">
                 {[5, 10, 25, 50, 100].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                  <SelectItem key={pageSize} value={`${pageSize}`} className="text-sm">
                     {pageSize}
                   </SelectItem>
                 ))}
@@ -264,7 +267,7 @@ export function DataTable<TData, TValue>({
             disabled={!table.getCanPreviousPage()}
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground disabled:opacity-50 disabled:hover:text-muted-foreground/70 transition-colors"
           >
-            <CaretLeftIcon className="w-4 h-4" weight="bold" />
+            <CaretLeftIcon className="w-3.5 h-3.5" weight="bold" />
           </button>
           
           <div className="flex items-center gap-1">
@@ -288,7 +291,7 @@ export function DataTable<TData, TValue>({
                 <button
                   key={p}
                   onClick={() => table.setPageIndex(p)}
-                  className={`flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-colors ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-md text-sm font-semibold transition-colors ${
                     currentPage === p
                       ? 'bg-muted text-foreground'
                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
@@ -305,7 +308,7 @@ export function DataTable<TData, TValue>({
             disabled={!table.getCanNextPage()}
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground disabled:opacity-50 disabled:hover:text-muted-foreground/70 transition-colors"
           >
-            <CaretRightIcon className="w-4 h-4" weight="bold" />
+            <CaretRightIcon className="w-3.5 h-3.5" weight="bold" />
           </button>
         </div>
       </div>

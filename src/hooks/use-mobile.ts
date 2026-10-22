@@ -1,6 +1,7 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Dưới 1024px (điện thoại, máy tính bảng) thanh menu CMS chuyển thành ngăn kéo để nội dung đủ rộng
+const MOBILE_BREAKPOINT = 1024
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)

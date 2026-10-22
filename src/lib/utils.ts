@@ -21,9 +21,30 @@ export function getAvatarColor(name: string) {
   return colors[index];
 }
 
+export function formatVND(value: number | string | null | undefined): string {
+  return `${Number(value || 0).toLocaleString('vi-VN')}đ`
+}
+
+export function formatDateTime(value: string | Date | null | undefined): string {
+  if (!value) return ''
+  const d = new Date(value)
+  return `${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+}
+
+// Số điện thoại Việt Nam: 10 số bắt đầu bằng 0, hoặc +84
+export function isValidVNPhone(phone: string): boolean {
+  return /^(0|\+84)\d{9}$/.test(phone.replace(/[\s.-]/g, ''))
+}
+
+// Địa chỉ SignalR hub (backend map tại /hubs/app, không nằm dưới /api)
+export function getHubUrl(): string {
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')
+  return `${baseUrl}/hubs/app`
+}
+
 export function getFileUrl(path: string | null | undefined): string {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
+  if (/^(https?:|blob:|data:)/.test(path)) return path;
   
   const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5116/api').replace(/\/api$/, '');
   return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;

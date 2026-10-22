@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react'
 import { createFileRoute, Outlet, Link, useLocation, useNavigate, redirect, Navigate } from '@tanstack/react-router'
-import { useTheme } from 'next-themes'
 import * as signalR from '@microsoft/signalr'
 import { toast } from 'sonner'
 import {
-  BellIcon,
   CaretDownIcon,
   GearIcon,
   SignOutIcon,
@@ -15,7 +13,6 @@ import { systemFunctionApi, type SystemFunction } from '@/lib/api/system/systemF
 import { userApi, type UserDto } from '@/lib/api/system/user'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +20,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn, getAvatarColor, getFileUrl } from '@/lib/utils'
+import { cn, getFileUrl } from '@/lib/utils'
 import { ProfileForm } from '@/components/profile-form'
 import { ChangePasswordForm } from '@/components/change-password-form'
 
@@ -52,10 +43,14 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarHeader,
+  SidebarFooter,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { authApi } from '@/lib/api/system/auth'
+import { Mascot, SparkleDoodle } from '@/components/shop/mascot'
+import { MascotTip } from '@/components/shop/mascot-tip'
 
 export const Route = createFileRoute('/cms')({
   beforeLoad: () => {
@@ -68,14 +63,20 @@ export const Route = createFileRoute('/cms')({
   component: CmsLayout,
 })
 
-function SidebarNavItem({ item, functions, location, isSubItem = false }: { item: SystemFunction, functions: SystemFunction[], location: any, isSubItem?: boolean }) {
+// Mỗi nhóm menu một màu kẹo
+const CANDY_COLORS = ['#FFD6E0', '#FEF08A', '#BAE6FD', '#BBF7D0', '#DDD6FE', '#FED7AA', '#A5F3FC']
+
+const NAV_ITEM_CLASS =
+  "group h-auto min-h-10 w-full rounded-xl px-2 py-1.5 text-sm font-semibold text-slate-700 whitespace-normal border-2 border-transparent transition-all cursor-pointer hover:bg-white/80 hover:text-slate-900 data-[active=true]:bg-white data-[active=true]:text-slate-900 data-[active=true]:font-bold data-[active=true]:border-slate-800 data-[active=true]:shadow-[2px_2px_0_#1e293b] data-[active=true]:-rotate-1"
+
+function SidebarNavItem({ item, functions, location, color, isSubItem = false }: { item: SystemFunction, functions: SystemFunction[], location: any, color: string, isSubItem?: boolean }) {
   const children = functions
     .filter(f => f.isShow && f.type !== 'button' && f.parentId === item.id)
     .sort((a, b) => a.order - b.order)
 
   const cleanName = item.name.replace(/^\|\s*([—-]\s*)*/, '')
   const iconName = item.icon
-  const Icon = iconName && (PhosphorIcons as any)[iconName] ? (PhosphorIcons as any)[iconName] : null
+  const Icon = (iconName && ((PhosphorIcons as any)[iconName] || (PhosphorIcons as any)[`${iconName}Icon`])) || (PhosphorIcons as any).PackageIcon || (PhosphorIcons as any).SparkleIcon
 
   const hasActiveChild = (items: SystemFunction[]): boolean => {
     return items.some(child => {
@@ -86,37 +87,42 @@ function SidebarNavItem({ item, functions, location, isSubItem = false }: { item
   }
 
   const isOpen = hasActiveChild(children);
+  const Wrapper = isSubItem ? SidebarMenuSubItem : SidebarMenuItem
+  const ButtonWrapper = isSubItem ? SidebarMenuSubButton : SidebarMenuButton
+
+  // Icon nằm trong bong bóng tròn màu kẹo, lắc nhẹ khi rê chuột
+  const iconEl = Icon && (
+    <span
+      className={cn(
+        "nav-bubble shrink-0 rounded-full border-[1.5px] border-slate-800 flex items-center justify-center",
+        isSubItem ? "w-6 h-6" : "w-7 h-7"
+      )}
+      style={{ backgroundColor: color }}
+    >
+      <Icon weight="bold" className={cn("text-slate-800", isSubItem ? "w-3.5 h-3.5" : "w-4 h-4")} />
+    </span>
+  )
+  // Tên dài được xuống dòng (tối đa 2 dòng) thay vì bị cắt "..."
+  const labelEl = <span className="flex-1 min-w-0 text-left leading-snug line-clamp-2 break-words" title={cleanName}>{cleanName}</span>
 
   if (children.length > 0) {
-    const Wrapper = isSubItem ? SidebarMenuSubItem : SidebarMenuItem
-    const ButtonWrapper = isSubItem ? SidebarMenuSubButton : SidebarMenuButton
-
     return (
       <Collapsible className="group/collapsible" defaultOpen={isOpen}>
         <Wrapper>
           <CollapsibleTrigger asChild>
             <ButtonWrapper
-              isActive={item.url ? location.pathname.replace(/\/$/, '').startsWith(item.url.replace(/\/$/, '')) : false}
-              className="group h-auto py-2.5 px-3 text-[15px] font-bold text-foreground hover:bg-blue-50 hover:text-blue-600 data-[active=true]:bg-blue-50 data-[active=true]:text-blue-600 dark:hover:bg-blue-500/10 dark:hover:text-blue-400 dark:data-[active=true]:bg-blue-500/10 dark:data-[active=true]:text-blue-400 rounded-lg w-full flex items-center transition-colors"
+              isActive={false}
+              className={cn(NAV_ITEM_CLASS, "flex items-center gap-2.5", isOpen && "text-slate-900")}
             >
-              {Icon && <Icon weight="regular" className={cn("shrink-0 transition-colors text-muted-foreground group-hover:text-current group-data-[active=true]:text-current", isSubItem ? "w-4 h-4 mr-2" : "w-5 h-5 mr-2")} />}
-              <TooltipProvider delayDuration={300}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="truncate flex-1 text-left">{cleanName}</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="z-100">
-                    {cleanName}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <PhosphorIcons.CaretDownIcon className="ml-auto w-4 h-4 text-muted-foreground/70 transition-transform group-data-[state=open]:rotate-180 shrink-0" />
+              {iconEl}
+              {labelEl}
+              <PhosphorIcons.CaretDownIcon className="ml-auto w-3.5 h-3.5 text-slate-500 transition-transform group-data-[state=open]/collapsible:rotate-180 shrink-0" weight="bold" />
             </ButtonWrapper>
           </CollapsibleTrigger>
           <CollapsibleContent className="animate-in slide-in-from-top-1">
-            <SidebarMenuSub className="pl-4 ml-2 mt-1">
+            <SidebarMenuSub className="ml-5 mr-0 pl-2 pr-0 mt-0.5 gap-0.5 border-l-2 border-dashed border-slate-300">
               {children.map(child => (
-                <SidebarNavItem key={child.id} item={child} functions={functions} location={location} isSubItem={true} />
+                <SidebarNavItem key={child.id} item={child} functions={functions} location={location} color={color} isSubItem={true} />
               ))}
             </SidebarMenuSub>
           </CollapsibleContent>
@@ -125,36 +131,30 @@ function SidebarNavItem({ item, functions, location, isSubItem = false }: { item
     )
   }
 
-  const Wrapper = isSubItem ? SidebarMenuSubItem : SidebarMenuItem
-  const ButtonWrapper = isSubItem ? SidebarMenuSubButton : SidebarMenuButton
-
   return (
     <Wrapper>
       <ButtonWrapper
         asChild
         isActive={location.pathname.replace(/\/$/, '') === (item.url || '').replace(/\/$/, '')}
-        className="group h-auto py-2.5 text-[15px] font-bold text-foreground hover:bg-blue-50 hover:text-blue-600 data-[active=true]:bg-blue-50 data-[active=true]:text-blue-600 dark:hover:bg-blue-500/10 dark:hover:text-blue-400 dark:data-[active=true]:bg-blue-500/10 dark:data-[active=true]:text-blue-400 rounded-lg px-3 w-full transition-colors"
+        className={NAV_ITEM_CLASS}
       >
-        <Link to={item.url || '#'} className="flex items-center w-full overflow-hidden">
-          {Icon && <Icon weight="regular" className={cn("shrink-0 transition-colors text-muted-foreground group-hover:text-current group-data-[active=true]:text-current", isSubItem ? "w-4 h-4 mr-2" : "w-5 h-5 mr-2")} />}
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="truncate flex-1 text-left">{cleanName}</span>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="z-100">
-                {cleanName}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <Link to={item.url || '#'} className="flex items-center gap-2.5 w-full">
+          {iconEl}
+          {labelEl}
         </Link>
       </ButtonWrapper>
     </Wrapper>
   )
 }
 
-function CmsSidebar() {
+function CmsSidebar({ userName }: { userName: string }) {
   const location = useLocation()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  // Trên điện thoại: tự đóng menu sau khi chuyển trang
+  useEffect(() => {
+    if (isMobile) setOpenMobile(false)
+  }, [location.pathname, isMobile, setOpenMobile])
 
   const { data: allData, isLoading } = useQuery({
     queryKey: ['systemFunctionsMy'],
@@ -168,33 +168,41 @@ function CmsSidebar() {
     .sort((a, b) => a.order - b.order)
 
   return (
-    <Sidebar className="bg-card border-r border-border">
-      <SidebarHeader className="h-16 px-6 border-b border-border/50 flex items-center justify-center">
-        <Link to="/" className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 w-full">
-          <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
-            <span className="text-white text-sm">QC</span>
+    <Sidebar variant="floating" className="cms-sidebar lg:p-3 lg:pr-1">
+      <SidebarHeader className="px-4 pt-4 pb-2 flex flex-row items-center bg-transparent shrink-0">
+        <Link to="/cms/dashboard" className="flex items-center gap-2.5 w-full group">
+          <div className="relative w-10 h-10 rounded-2xl bg-[#FFB4B4] border-2 border-slate-800 shadow-[2px_2px_0_#1e293b] flex items-center justify-center -rotate-6 group-hover:rotate-6 transition-transform shrink-0">
+            <PhosphorIcons.SparkleIcon className="w-5 h-5 text-slate-900" weight="fill" />
+            <SparkleDoodle className="twinkle absolute -top-2 -right-2 w-3.5 h-3.5 text-[#FEF08A]" />
           </div>
-          SystemBase CMS
+          <div className="min-w-0 leading-tight">
+            <span className="text-base font-black text-slate-900 block truncate">Squishy Pop</span>
+            <span className="text-xs font-semibold text-slate-500 block truncate">Quản trị cửa hàng 🎀</span>
+          </div>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-3 pb-2 bg-transparent scrollbar-thin">
         {isLoading ? (
           <div className="flex justify-center p-4">
-            <PhosphorIcons.CircleNotchIcon className="w-6 h-6 animate-spin text-muted-foreground/70" />
+            <Mascot mood="happy" size={48} className="mochi-hop" />
           </div>
         ) : (
-          <SidebarGroup className="mt-2">
+          <SidebarGroup className="p-0">
             <SidebarGroupContent>
-              <SidebarMenu className="gap-1.5">
-                {rootItems.map(item => (
-                  <SidebarNavItem key={item.id} item={item} functions={functions} location={location} />
+              <SidebarMenu className="gap-1">
+                {rootItems.map((item, idx) => (
+                  <SidebarNavItem key={item.id} item={item} functions={functions} location={location} color={CANDY_COLORS[idx % CANDY_COLORS.length]} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
       </SidebarContent>
+
+      <SidebarFooter className="px-4 pb-4 pt-0 bg-transparent shrink-0 [@media(max-height:700px)]:hidden">
+        <MascotTip userName={userName} />
+      </SidebarFooter>
     </Sidebar>
   )
 }
@@ -205,7 +213,6 @@ function CmsLayout() {
   const queryClient = useQueryClient()
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = React.useState(false)
-  const { setTheme, theme } = useTheme()
 
   const { data: myData } = useQuery({
     queryKey: ['me'],
@@ -222,7 +229,6 @@ function CmsLayout() {
   const avatarPath = currentUser?.avatarPath || null
 
   const initial = displayUserName.charAt(0).toUpperCase()
-  const avatarColorClass = getAvatarColor(displayUserName)
 
   const { data: allData, isSuccess, isLoading } = useQuery({
     queryKey: ['systemFunctionsMy'],
@@ -342,7 +348,7 @@ function CmsLayout() {
     }
   }
 
-  let breadcrumb: string[] = []
+  const breadcrumb: string[] = []
   const currentFunc = functions.find(f => f.url && location.pathname.replace(/\/$/, '').startsWith(f.url.replace(/\/$/, '')))
   if (currentFunc) {
     if (currentFunc.parentId && currentFunc.parentId !== "00000000-0000-0000-0000-000000000000") {
@@ -355,82 +361,78 @@ function CmsLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-muted/50 text-foreground font-sans">
-        <CmsSidebar />
+    <SidebarProvider style={{ "--sidebar-width": "17rem" } as React.CSSProperties}>
+      <div className="flex h-svh w-full doodle-pattern text-foreground font-sans overflow-hidden">
+        <CmsSidebar userName={displayUserName} />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col w-full overflow-hidden">
-          {/* Topbar */}
-          <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sticky top-0 z-10 shadow-sm shrink-0">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <h1 className="text-base sm:text-md font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wide hidden sm:block">
-                SYSTEMBASE CMS
-              </h1>
+        <div className="flex-1 flex flex-col min-w-0 h-svh overflow-hidden">
+          {/* Thanh trên: tên trang hiện tại + tài khoản */}
+          <header className="scallop-bottom h-14 flex items-center justify-between gap-2 px-3 sm:px-5 z-20 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <SidebarTrigger className="rounded-xl bg-white border-2 border-slate-800 shadow-[2px_2px_0_#1e293b] hover:bg-[#FEF08A] p-1.5 cursor-pointer h-9 w-9 shrink-0" />
+              <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+              <nav className="flex items-center gap-1.5 min-w-0 text-sm" aria-label="Breadcrumb">
+                {breadcrumb.length === 0 ? (
+                  <span className="font-bold text-slate-900 truncate">Bảng điều khiển</span>
+                ) : (
+                  breadcrumb.map((item, index) => (
+                    <React.Fragment key={index}>
+                      {index > 0 && <PhosphorIcons.CaretRightIcon className="w-3.5 h-3.5 text-slate-400 shrink-0 hidden sm:block" />}
+                      <span className={index === breadcrumb.length - 1 ? "font-bold text-slate-900 truncate" : "text-slate-500 truncate hidden sm:inline"}>
+                        {item}
+                      </span>
+                    </React.Fragment>
+                  ))
+                )}
+              </nav>
             </div>
 
-            <div className="flex items-center gap-3 ml-auto">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-full relative">
-                <BellIcon className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </Button>
+            <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto shrink-0">
+              {/* Storefront Link */}
+              <Link
+                to="/"
+                title="Xem cửa hàng"
+                className="flex items-center gap-1.5 text-slate-700 hover:bg-slate-100 rounded-lg h-9 w-9 md:w-auto justify-center md:px-3 text-sm font-semibold transition-colors"
+              >
+                <PhosphorIcons.StorefrontIcon className="w-4 h-4" weight="bold" />
+                <span className="hidden md:inline">Xem cửa hàng</span>
+              </Link>
 
-              <Separator orientation="vertical" className="h-5" />
-
+              {/* User Account Capsule matching Reference Image 1 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 pl-1 pr-1 py-1 rounded-full hover:bg-accent">
-                    <Avatar className="w-8 h-8 ring-2 ring-white shadow-sm transition-transform hover:scale-105">
+                  <button className="rounded-full h-9 pl-1 pr-2 sm:pr-3 flex items-center gap-2 hover:bg-slate-100 transition-colors cursor-pointer">
+                    <Avatar className="w-7 h-7 border-1.5 border-black">
                       {avatarPath ? (
                         <img src={getFileUrl(avatarPath)} alt="avatar" className="w-full h-full object-cover" />
                       ) : (
-                        <AvatarFallback className={cn(avatarColorClass, "text-white font-semibold text-sm")}>
+                        <AvatarFallback className="bg-[#BAE6FD] text-black font-black text-[11px]">
                           {initial}
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <span className="text-sm font-semibold text-foreground hidden sm:block px-1 tracking-tight">{displayUserName}</span>
-                    <CaretDownIcon className="w-4 h-4 text-muted-foreground/70 mr-1 hidden sm:block" />
-                  </Button>
+                    <span className="hidden sm:block text-sm font-semibold text-slate-900 max-w-32 truncate">{displayUserName}</span>
+                    <CaretDownIcon className="w-3.5 h-3.5 text-slate-500" weight="bold" />
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 mt-1">
-                  <DropdownMenuLabel>Thông tin tài khoản</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsProfileOpen(true)}>
-                    <GearIcon className="mr-2 w-4 h-4" />
+                <DropdownMenuContent align="end" className="w-60 mt-1 rounded-xl border border-slate-200 shadow-lg p-1.5 bg-white">
+                  <DropdownMenuLabel className="font-medium text-xs text-slate-500">
+                    Đăng nhập với
+                    <span className="block text-sm font-bold text-slate-900 truncate mt-0.5">{displayUserName}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-200" />
+                  <DropdownMenuItem className="cursor-pointer font-medium text-sm rounded-lg py-2 hover:bg-[#FAF7EE]" onClick={() => setIsProfileOpen(true)}>
+                    <GearIcon className="mr-2 w-4 h-4" weight="bold" />
                     <span>Cài đặt tài khoản</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsChangePasswordOpen(true)}>
-                    <PhosphorIcons.LockKeyIcon className="mr-2 w-4 h-4" />
+                  <DropdownMenuItem className="cursor-pointer font-medium text-sm rounded-lg py-2 hover:bg-[#FAF7EE]" onClick={() => setIsChangePasswordOpen(true)}>
+                    <PhosphorIcons.LockKeyIcon className="mr-2 w-4 h-4" weight="bold" />
                     <span>Đổi mật khẩu</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="cursor-pointer">
-                      <PhosphorIcons.PaletteIcon className="mr-2 w-4 h-4" />
-                      <span>Giao diện ({theme === 'dark' ? 'Tối' : theme === 'system' ? 'Hệ thống' : 'Sáng'})</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => setTheme("light")}>
-                          <PhosphorIcons.SunIcon className="mr-2 w-4 h-4" />
-                          <span>Sáng</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => setTheme("dark")}>
-                          <PhosphorIcons.MoonIcon className="mr-2 w-4 h-4" />
-                          <span>Tối</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => setTheme("system")}>
-                          <PhosphorIcons.MonitorIcon className="mr-2 w-4 h-4" />
-                          <span>Hệ thống</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:bg-red-500/10" onClick={handleLogout}>
-                    <SignOutIcon className="mr-2 w-4 h-4" />
+                  <DropdownMenuSeparator className="bg-slate-200" />
+                  <DropdownMenuItem className="cursor-pointer font-medium text-sm rounded-lg py-2 text-red-600 focus:text-red-600 focus:bg-red-50 hover:bg-red-50" onClick={handleLogout}>
+                    <SignOutIcon className="mr-2 w-4 h-4" weight="bold" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -438,49 +440,10 @@ function CmsLayout() {
             </div>
           </header>
 
-          {/* Page Content */}
-          <main className="flex-1 p-3 lg:p-3 bg-muted/30 overflow-y-auto">
+          <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-5 sm:px-5 sm:pb-5 sm:pt-7 lg:px-6 scrollbar-thin">
             <Outlet />
           </main>
 
-          {/* Footer */}
-          <footer className="h-12 bg-card border-t border-border flex items-center justify-between px-6 text-sm text-muted-foreground shrink-0">
-            <div className="flex items-center gap-2">
-              {breadcrumb.map((item, index) => (
-                <React.Fragment key={index}>
-                  {index > 0 && <PhosphorIcons.CaretRightIcon className="w-3.5 h-3.5 text-muted-foreground/70" />}
-                  <span className={index === breadcrumb.length - 1 ? "font-bold text-foreground" : "text-muted-foreground"}>
-                    {item}
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
-
-            <div className="text-center flex-1 mx-4 hidden md:block">
-              2026 &copy; Cục Đổi mới sáng tạo, Chuyển đổi xanh và Khuyến công
-            </div>
-
-            <div className="flex items-center gap-4">
-              <a href="#" className="flex items-center gap-1 hover:text-foreground transition-colors">
-                <PhosphorIcons.QuestionIcon className="w-4 h-4" />
-                Hướng dẫn
-              </a>
-              <a href="#" className="hidden sm:flex items-center gap-1 hover:text-foreground transition-colors">
-                <PhosphorIcons.ChatCircleTextIcon className="w-4 h-4" />
-                FAQ
-              </a>
-
-              <a href="#" className="hidden sm:flex items-center gap-1 hover:text-foreground transition-colors">
-                <PhosphorIcons.HeadsetIcon className="w-4 h-4" />
-                Hỗ trợ
-              </a>
-
-              <a href="#" className="hidden sm:flex items-center gap-1 hover:text-foreground transition-colors">
-                <PhosphorIcons.CopyrightIcon className="w-4 h-4" />
-                Bản quyền
-              </a>
-            </div>
-          </footer>
         </div>
       </div>
       

@@ -43,14 +43,14 @@ export const getColumns = ({ onDelete, checkPermission }: ColumnProps): ColumnDe
   {
     accessorKey: 'userName',
     header: 'Tài khoản',
-    cell: ({ row }) => <div className="font-medium text-[15px]">{row.getValue('userName')}</div>,
+    cell: ({ row }) => <div className="font-semibold text-xs">{row.getValue('userName')}</div>,
   },
   {
     accessorKey: 'action',
     header: 'Hành động',
     cell: ({ row }) => {
       const action = row.getValue('action') as string;
-      return <div className="font-medium text-[14px] text-indigo-600">{action}</div>
+      return <div className="font-semibold text-xs text-indigo-600">{action}</div>
     },
   },
   {

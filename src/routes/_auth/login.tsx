@@ -148,9 +148,9 @@ function Login() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-      <Card className="border-border bg-background/80 backdrop-blur-xl text-foreground shadow-2xl w-full p-6">
+      <Card className="bg-white text-foreground w-full p-2 sm:p-6 border-2 sm:border-[2.5px] border-black rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000]">
         <CardHeader className="space-y-1 text-center mb-4">
-          <CardTitle className="text-4xl font-bold tracking-tight">Đăng nhập</CardTitle>
+          <CardTitle className="text-3xl sm:text-4xl font-black tracking-tight">Đăng nhập</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-5">
@@ -241,11 +241,8 @@ function Login() {
                 Quên mật khẩu?
               </Link>
 
-              <div className="text-sm text-muted-foreground pt-3 border-t border-border/50">
-                Chưa có tài khoản?{' '}
-                <Link to="/register" className="font-semibold text-foreground hover:underline transition-all">
-                  Đăng ký ngay
-                </Link>
+              <div className="text-xs font-semibold text-slate-500 pt-3 border-t border-border/50">
+                🔒 Hệ thống quản trị nội bộ Squishy Pop. Tài khoản do Quản trị viên cấp.
               </div>
             </div>
           </CardFooter>

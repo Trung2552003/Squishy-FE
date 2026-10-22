@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.git/
+.tanstack/
+.vscode/
+# Biến môi trường máy dev (localhost); bản Docker lấy từ ARG trong Dockerfile
+.env
+.env.*
+*.log

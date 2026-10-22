@@ -181,17 +181,17 @@ function SystemUsersPage() {
   })
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4 sm:p-6">
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div className="bg-white border-2 border-black rounded-2xl shadow-[3px_3px_0px_#000] p-3 sm:p-4">
         {isLoading ? (
-          <div className="h-64 flex flex-col items-center justify-center text-muted-foreground/70 space-y-4">
-            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <p className="text-sm font-medium">Đang tải dữ liệu...</p>
+          <div className="h-48 flex flex-col items-center justify-center text-muted-foreground/70 space-y-3">
+            <div className="w-7 h-7 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <p className="text-xs font-medium">Đang tải dữ liệu...</p>
           </div>
         ) : isError ? (
-          <div className="h-64 flex flex-col items-center justify-center text-red-500 space-y-3 bg-red-50 dark:bg-red-500/10 rounded-lg">
-            <p className="font-medium text-red-600">Đã có lỗi xảy ra khi tải dữ liệu từ máy chủ.</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} className="border-red-200 dark:border-red-500/30 text-red-600 hover:bg-red-50 dark:bg-red-500/10">Thử lại</Button>
+          <div className="h-48 flex flex-col items-center justify-center text-red-500 space-y-2 bg-red-50 dark:bg-red-500/10 rounded-xl p-4">
+            <p className="font-semibold text-xs text-red-600">Đã có lỗi xảy ra khi tải dữ liệu từ máy chủ.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs border-red-200 dark:border-red-500/30 text-red-600 hover:bg-red-50">Thử lại</Button>
           </div>
         ) : (
           <DataTable
@@ -216,8 +216,8 @@ function SystemUsersPage() {
                   }}
                 />
                 {canAdd && (
-                  <Button onClick={handleAddNew} className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
-                    <PlusIcon className="w-4 h-4 mr-2" />
+                  <Button onClick={handleAddNew} className="h-8.5 text-xs font-bold px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm">
+                    <PlusIcon className="w-3.5 h-3.5 mr-1.5" />
                     Thêm mới
                   </Button>
                 )}

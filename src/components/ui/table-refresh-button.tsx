@@ -11,9 +11,9 @@ export function TableRefreshButton({ hasNewData, onRefresh }: TableRefreshButton
     <Button 
       onClick={onRefresh} 
       variant={hasNewData ? "default" : "outline"}
-      className={`h-10 transition-all ${hasNewData ? "bg-amber-500 hover:bg-amber-600 text-white shadow-md" : ""}`}
+      className={`h-8.5 text-xs font-bold px-3 transition-all rounded-lg ${hasNewData ? "bg-amber-500 hover:bg-amber-600 text-white shadow-sm" : ""}`}
     >
-      <ArrowsClockwiseIcon className={`w-4 h-4 mr-2 ${hasNewData ? 'animate-spin' : ''}`} />
+      <ArrowsClockwiseIcon className={`w-3.5 h-3.5 mr-1.5 ${hasNewData ? 'animate-spin' : ''}`} />
       Làm mới
     </Button>
   );

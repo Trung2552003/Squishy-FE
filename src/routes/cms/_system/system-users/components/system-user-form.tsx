@@ -251,7 +251,7 @@ export function SystemUserForm({
                 <span className="text-xs text-muted-foreground mt-2">Ảnh đại diện</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="userName"
@@ -398,7 +398,7 @@ export function SystemUserForm({
                 <div className="text-sm text-muted-foreground py-4 text-center">Đang tải phân quyền...</div>
               ) : (
                 <div className="border border-border rounded-lg overflow-hidden bg-card">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-0">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 gap-0">
                     {allRoles.map((role) => {
                       const isChecked = (form.watch("roleIds") || []).includes(role.id)
 

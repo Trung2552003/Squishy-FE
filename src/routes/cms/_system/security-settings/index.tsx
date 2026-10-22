@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { securitySettingApi, type SystemSecuritySetting } from '@/lib/api/system/securitySetting'
-import { ShieldCheckIcon, FloppyDiskIcon } from '@phosphor-icons/react'
+import { FloppyDiskIcon } from '@phosphor-icons/react'
+import { PageHeader } from '@/components/shop/page-header'
 import { Checkbox } from '@/components/ui/checkbox'
 import { usePermission } from '@/hooks/usePermission'
 
@@ -75,26 +76,22 @@ function SecuritySettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
-            <ShieldCheckIcon weight="fill" className="text-blue-500 w-8 h-8 lg:w-9 lg:h-9" />
-            Cấu hình Bảo mật
-          </h1>
-          <p className="text-muted-foreground mt-1 lg:mt-2 text-sm lg:text-lg">
-            Thiết lập các chính sách về mật khẩu, khóa tài khoản và kiểm soát IP quản trị.
-          </p>
-        </div>
-        {canSave && (
-          <Button onClick={handleSave} disabled={updateMutation.isPending} className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg">
-            <FloppyDiskIcon weight="bold" className="w-4 h-4 mr-2" />
-            {updateMutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}
-          </Button>
-        )}
-      </div>
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+      <PageHeader
+        emoji="🛡️"
+        title="Cấu hình bảo mật"
+        description="Thiết lập các chính sách về mật khẩu, khóa tài khoản và kiểm soát IP quản trị."
+        actions={
+          canSave && (
+            <Button onClick={handleSave} disabled={updateMutation.isPending} className="h-10 w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg">
+              <FloppyDiskIcon weight="bold" className="w-4 h-4 mr-2" />
+              {updateMutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}
+            </Button>
+          )
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="lg:text-xl">Quy tắc Mật khẩu</CardTitle>
