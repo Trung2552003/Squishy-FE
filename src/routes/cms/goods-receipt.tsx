@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -69,11 +69,13 @@ function GoodsReceiptScreen() {
   });
   const suppliers = suppliersRes?.data || [];
 
-  const { data: productsRes } = useQuery({
+  const { data: productsRes, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['squishyActiveProductsAll'],
     queryFn: () => productApi.getActive(),
   });
   const products = productsRes?.data || [];
+  // Phiếu nhập chỉ cộng kho cho sản phẩm đã có trong danh mục: chưa có sản phẩm thì phải tạo trước
+  const noProducts = !isLoadingProducts && products.length === 0;
 
   const { data: stockLogsRes, isLoading: isLoadingStockLogs } = useQuery({
     queryKey: ['stockTransactions'],
@@ -223,13 +225,26 @@ function GoodsReceiptScreen() {
         actions={
           <button
             onClick={handleOpenCreate}
-            disabled={products.length === 0}
+            disabled={noProducts}
+            title={noProducts ? 'Cần tạo sản phẩm trước khi nhập kho' : undefined}
             className="doodle-btn bg-[#FEF08A] hover:bg-[#FDE047] text-black px-4 py-2.5 text-sm flex items-center justify-center gap-2 w-full md:w-auto"
           >
             <Plus className="w-4 h-4" weight="bold" /> Tạo phiếu nhập kho
           </button>
         }
       />
+
+      {noProducts && (
+        <div className="doodle-card p-4 bg-[#FEF3C7] flex flex-col sm:flex-row sm:items-center gap-3">
+          <p className="flex-1 text-sm font-semibold text-amber-900">
+            Chưa có sản phẩm nào nên chưa tạo được phiếu nhập. Phiếu nhập dùng để cộng số lượng và tính giá vốn cho các sản phẩm đã có,
+            vì vậy hãy tạo sản phẩm (để tồn kho = 0) trước, rồi quay lại đây nhập hàng.
+          </p>
+          <Link to="/cms/products" className="doodle-btn bg-white px-4 py-2 text-sm text-center shrink-0">
+            + Tạo sản phẩm
+          </Link>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <button onClick={() => setActiveTab('RECEIPTS')} className={tabClass(activeTab === 'RECEIPTS')}>

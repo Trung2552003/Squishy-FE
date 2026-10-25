@@ -156,7 +156,8 @@ function ProductsScreen() {
     setFormUnit('Chiếc');
     setFormCostPrice(20000);
     setFormSalePrice(50000);
-    setFormCurrentStock(20);
+    // Hàng vào kho qua Phiếu nhập kho (ghi nhận giá vốn + tiền nhập hàng), nên sản phẩm mới bắt đầu từ 0
+    setFormCurrentStock(0);
     setFormMinStockAlert(5);
     setFormSquishyType('Slow-rising');
     setFormDescription('');
@@ -557,6 +558,9 @@ function ProductsScreen() {
               <div>
                 <label htmlFor="p-stock" className={labelClass}>Số Lượng Tồn Kho</label>
                 <Input id="p-stock" type="number" inputMode="numeric" min={0} value={formCurrentStock} onChange={e => setFormCurrentStock(Number(e.target.value))} className={cn(fieldClass, 'font-semibold')} />
+                {!editingProduct && (
+                  <p className="text-xs text-muted-foreground mt-1">Nên để 0, rồi nhập hàng qua Phiếu nhập kho để báo cáo tính đúng giá vốn và tiền nhập hàng.</p>
+                )}
               </div>
 
               <div>
