@@ -408,6 +408,7 @@ function PosScreen() {
                     type="number"
                     inputMode="numeric"
                     min={0}
+                    step="any"
                     value={item.unitPrice}
                     onFocus={selectOnFocus}
                     onChange={e => updatePrice(item.key, Number(e.target.value))}

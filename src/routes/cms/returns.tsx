@@ -676,7 +676,7 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
                     {requestType !== 'REPAIR' && (
                       <label className="block">
                         <span className="text-sm font-semibold block mb-1">Hoàn tiền cho khách</span>
-                        <Input type="number" inputMode="numeric" min={0} value={refund} onChange={e => setRefundOverride(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
+                        <Input type="number" inputMode="numeric" min={0} step="any" value={refund} onChange={e => setRefundOverride(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
                       </label>
                     )}
                     {refund > 0 && requestType !== 'REPAIR' && (
@@ -691,13 +691,13 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
                     {(requestType === 'EXCHANGE' || requestType === 'REPAIR') && (
                       <label className="block">
                         <span className="text-sm font-semibold block mb-1">{requestType === 'REPAIR' ? 'Phí sửa thu của khách' : 'Khách trả thêm (chênh lệch)'}</span>
-                        <Input type="number" inputMode="numeric" min={0} value={extra} onChange={e => setExtraOverride(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
+                        <Input type="number" inputMode="numeric" min={0} step="any" value={extra} onChange={e => setExtraOverride(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
                       </label>
                     )}
                     {requestType === 'REPAIR' && (
                       <label className="block">
                         <span className="text-sm font-semibold block mb-1">Chi phí sửa (shop chịu)</span>
-                        <Input type="number" inputMode="numeric" min={0} value={repairCost} onChange={e => setRepairCost(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
+                        <Input type="number" inputMode="numeric" min={0} step="any" value={repairCost} onChange={e => setRepairCost(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
                       </label>
                     )}
                     <p className="sm:col-span-2 text-xs text-muted-foreground">
@@ -936,7 +936,7 @@ function ReturnDetailDialog({ id, onClose }: { id: string | null; onClose: () =>
                   <label className="block">
                     <span className="text-muted-foreground block mb-1">Hoàn cho khách{r.refundMethod ? ` (${r.refundMethod === 'CASH' ? 'tiền mặt' : 'chuyển khoản'})` : ''}</span>
                     {isFinal ? <strong className="text-rose-600 text-base">{formatVND(r.refundAmount)}</strong> : (
-                      <Input type="number" inputMode="numeric" min={0} value={refund ?? r.refundAmount} onChange={e => setRefund(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
+                      <Input type="number" inputMode="numeric" min={0} step="any" value={refund ?? r.refundAmount} onChange={e => setRefund(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
                     )}
                   </label>
                 )}
@@ -944,7 +944,7 @@ function ReturnDetailDialog({ id, onClose }: { id: string | null; onClose: () =>
                   <label className="block">
                     <span className="text-muted-foreground block mb-1">{r.requestType === 'REPAIR' ? 'Phí sửa thu của khách' : 'Khách trả thêm'}</span>
                     {isFinal ? <strong className="text-emerald-600 text-base">{formatVND(r.extraCharge)}</strong> : (
-                      <Input type="number" inputMode="numeric" min={0} value={extra ?? r.extraCharge} onChange={e => setExtra(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
+                      <Input type="number" inputMode="numeric" min={0} step="any" value={extra ?? r.extraCharge} onChange={e => setExtra(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
                     )}
                   </label>
                 )}
@@ -952,7 +952,7 @@ function ReturnDetailDialog({ id, onClose }: { id: string | null; onClose: () =>
                   <label className="block">
                     <span className="text-muted-foreground block mb-1">Chi phí sửa (shop chịu)</span>
                     {isFinal ? <strong className="text-base">{formatVND(r.repairCost)}</strong> : (
-                      <Input type="number" inputMode="numeric" min={0} value={repairCost ?? r.repairCost} onChange={e => setRepairCost(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
+                      <Input type="number" inputMode="numeric" min={0} step="any" value={repairCost ?? r.repairCost} onChange={e => setRepairCost(Math.max(0, Number(e.target.value) || 0))} className={moneyInput} />
                     )}
                   </label>
                 )}

@@ -578,12 +578,12 @@ function ProductsScreen() {
 
               <div>
                 <label htmlFor="p-cost" className={labelClass}>Giá Nhập (Giá vốn)</label>
-                <Input id="p-cost" type="number" inputMode="numeric" min={0} value={formCostPrice} onChange={e => setFormCostPrice(Number(e.target.value))} className={fieldClass} />
+                <Input id="p-cost" type="number" inputMode="decimal" step="any" min={0} value={formCostPrice} onChange={e => setFormCostPrice(Number(e.target.value))} className={fieldClass} />
               </div>
 
               <div>
                 <label htmlFor="p-sale" className={labelClass}>Giá Bán Niêm Yết *</label>
-                <Input id="p-sale" type="number" inputMode="numeric" min={0} required value={formSalePrice} onChange={e => setFormSalePrice(Number(e.target.value))} className={cn(fieldClass, 'font-bold text-rose-600')} />
+                <Input id="p-sale" type="number" inputMode="decimal" step="any" min={0} required value={formSalePrice} onChange={e => setFormSalePrice(Number(e.target.value))} className={cn(fieldClass, 'font-bold text-rose-600')} />
                 {formSalePrice > 0 && (
                   <span className={cn('text-[11px] font-semibold mt-1 block', margin < 0 ? 'text-red-600' : 'text-emerald-700')}>
                     Lãi gộp: {formatVND(formSalePrice - formCostPrice)} ({margin}%)

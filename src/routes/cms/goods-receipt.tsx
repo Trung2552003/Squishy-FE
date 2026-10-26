@@ -575,6 +575,7 @@ function GoodsReceiptScreen() {
                           type="number"
                           inputMode="numeric"
                           min={0}
+                          step="any"
                           value={item.unitPrice}
                           onChange={e => updateItem(idx, 'unitPrice', Number(e.target.value))}
                           aria-label="Giá nhập"

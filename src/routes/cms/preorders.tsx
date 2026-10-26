@@ -926,7 +926,7 @@ function ItemDialog({ item, nextOrder, onClose, onSaved }: { item: PreorderItem 
           <div className="grid grid-cols-2 gap-3">
             <label className="block" htmlFor="pi-price">
               <span className="text-sm font-semibold block mb-1.5">Giá (đ)</span>
-              <Input id="pi-price" type="number" inputMode="numeric" min={0} value={form.price} onChange={e => setForm(f => ({ ...f, price: Math.max(0, Number(e.target.value) || 0) }))} className="h-10 rounded-xl" />
+              <Input id="pi-price" type="number" inputMode="numeric" min={0} step="any" value={form.price} onChange={e => setForm(f => ({ ...f, price: Math.max(0, Number(e.target.value) || 0) }))} className="h-10 rounded-xl" />
             </label>
             <label className="block" htmlFor="pi-order">
               <span className="text-sm font-semibold block mb-1.5">Thứ tự</span>
