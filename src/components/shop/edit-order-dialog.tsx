@@ -13,6 +13,7 @@ export const SHIPPING_PROVIDERS = [
   { value: 'GHTK', label: 'Giao Hàng Tiết Kiệm (GHTK)' },
   { value: 'GHN', label: 'Giao Hàng Nhanh (GHN)' },
   { value: 'ViettelPost', label: 'Viettel Post' },
+  { value: 'SPX', label: 'SPX Express' },
   { value: 'GrabExpress', label: 'Grab Express / Be' },
   { value: 'ShipperNoiBo', label: 'Shipper riêng của shop' },
 ];

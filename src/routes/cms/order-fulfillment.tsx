@@ -20,7 +20,7 @@ import { PageHeader, LoadingState } from '@/components/shop/page-header';
 import { Mascot } from '@/components/shop/mascot';
 import { ProductImage } from '@/components/shop/product-image';
 import { EntityPhotos } from '@/components/shop/entity-photos';
-import { EditOrderDialog, PAYER_LABELS } from '@/components/shop/edit-order-dialog';
+import { EditOrderDialog, PAYER_LABELS, SHIPPING_PROVIDERS } from '@/components/shop/edit-order-dialog';
 import { formatVND } from '@/lib/utils';
 import { formatDateTime } from '@/lib/utils';
 
@@ -363,11 +363,7 @@ function OrderFulfillmentScreen() {
                     onChange={e => setShippingProvider(e.target.value)}
                     className="w-full h-10 text-base sm:text-sm"
                   >
-                    <option value="GHTK">Giao Hàng Tiết Kiệm (GHTK)</option>
-                    <option value="GHN">Giao Hàng Nhanh (GHN)</option>
-                    <option value="ViettelPost">Viettel Post</option>
-                    <option value="GrabExpress">Grab Express / Be</option>
-                    <option value="ShipperNoiBo">Shipper riêng của shop</option>
+                    {SHIPPING_PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
                 </div>
 
