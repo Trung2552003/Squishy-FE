@@ -19,6 +19,31 @@ export interface Product {
   createdAt: string;
   images: MediaItem[];
   videos: MediaItem[];
+  /** Phân loại màu: có màu thì tồn kho của sản phẩm = tổng tồn các màu */
+  variants: ProductVariant[];
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  name: string;
+  colorHex?: string;
+  imageUrl?: string;
+  currentStock: number;
+  costPrice: number;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface SaveProductVariantInput {
+  /** bỏ trống = màu mới */
+  id?: string;
+  name: string;
+  colorHex?: string;
+  imageUrl?: string;
+  isActive: boolean;
+  /** Tồn đầu kỳ, chỉ dùng khi tạo màu mới */
+  initialStock?: number;
 }
 
 export interface ProductFilter {
@@ -44,6 +69,8 @@ export interface CreateUpdateProductInput {
   isActive?: boolean;
   imageUrls?: string[];
   videoUrls?: string[];
+  /** bỏ trống = không đổi phân loại */
+  variants?: SaveProductVariantInput[];
 }
 
 export const productApi = {

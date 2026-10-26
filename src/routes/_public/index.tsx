@@ -27,6 +27,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ProductImage } from '@/components/shop/product-image';
+import { VariantPicker } from '@/components/shop/variant-picker';
+import { cartKey, findVariant, hasVariants, lineImage, lineName, sellableStock, sellableVariants, stockOf } from '@/lib/variants';
 import { cn, formatVND, getFileUrl, getHubUrl, isValidVNPhone } from '@/lib/utils';
 
 export const Route = createFileRoute('/_public/')({
@@ -35,8 +37,13 @@ export const Route = createFileRoute('/_public/')({
 
 interface CartItem {
   product: Product;
+  /** Màu đã chọn (sản phẩm có phân loại) */
+  variantId?: string;
   quantity: number;
 }
+
+// Mỗi màu là 1 dòng riêng trong giỏ (giỏ cũ lưu trước khi có màu vẫn dùng được)
+const itemKey = (i: CartItem) => cartKey(i.product.id, i.variantId);
 
 const CART_STORAGE_KEY = 'squishy-cart';
 const FREE_SHIP_THRESHOLD = 200000;
@@ -88,6 +95,7 @@ function SquishyStorefront() {
   const [detailMediaTab, setDetailMediaTab] = useState<'IMAGES' | 'VIDEO'>('IMAGES');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [detailQuantity, setDetailQuantity] = useState(1);
+  const [detailVariantId, setDetailVariantId] = useState<string | undefined>(undefined);
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
 
   const openProductDetail = (p: Product, initialTab: 'IMAGES' | 'VIDEO' = 'IMAGES') => {
@@ -95,6 +103,8 @@ function SquishyStorefront() {
     setDetailMediaTab(initialTab);
     setActiveImageIndex(0);
     setDetailQuantity(1);
+    // Chọn sẵn màu đầu tiên còn hàng
+    setDetailVariantId(sellableVariants(p).find(v => v.currentStock > 0)?.id);
   };
 
   useEffect(() => {
@@ -152,43 +162,52 @@ function SquishyStorefront() {
   const cartCount = cart.reduce((a, b) => a + b.quantity, 0);
 
   // Cart operations
-  const addToCart = (product: Product) => {
-    if (product.currentStock <= 0) {
+  const addToCart = (product: Product, variantId?: string, qty = 1) => {
+    // Sản phẩm có nhiều màu: mở chi tiết để khách chọn màu
+    if (hasVariants(product) && !variantId) {
+      openProductDetail(product);
+      return;
+    }
+    const stock = stockOf(product, variantId);
+    if (stock <= 0) {
       toast.error('Sản phẩm này tạm thời hết hàng!');
       return;
     }
 
-    const existing = cart.find(i => i.product.id === product.id);
-    if (existing && existing.quantity >= product.currentStock) {
-      toast.warning(`Kho chỉ còn ${product.currentStock} món!`);
+    const key = cartKey(product.id, variantId);
+    const inCart = cart.find(i => itemKey(i) === key)?.quantity ?? 0;
+    const addQty = Math.min(qty, stock - inCart);
+    if (addQty <= 0) {
+      toast.warning(`Kho chỉ còn ${stock} món!`);
       return;
     }
 
     setCart(prev =>
-      prev.some(i => i.product.id === product.id)
-        ? prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
-        : [...prev, { product, quantity: 1 }]
+      prev.some(i => itemKey(i) === key)
+        ? prev.map(i => itemKey(i) === key ? { ...i, quantity: i.quantity + addQty } : i)
+        : [...prev, { product, variantId, quantity: addQty }]
     );
-    toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`, {
+    if (addQty < qty) toast.warning(`Kho chỉ còn ${stock} món, đã thêm ${addQty}.`);
+    toast.success(`Đã thêm "${lineName(product, variantId)}" vào giỏ hàng!`, {
       action: { label: 'Xem giỏ', onClick: () => setIsCartOpen(true) },
     });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
-    const item = cart.find(i => i.product.id === productId);
-    if (item && item.quantity + delta > item.product.currentStock) {
-      toast.warning(`Kho chỉ còn ${item.product.currentStock} món!`);
+  const updateQuantity = (key: string, delta: number) => {
+    const item = cart.find(i => itemKey(i) === key);
+    if (item && item.quantity + delta > stockOf(item.product, item.variantId)) {
+      toast.warning(`Kho chỉ còn ${stockOf(item.product, item.variantId)} món!`);
       return;
     }
     setCart(prev =>
       prev
-        .map(i => i.product.id === productId ? { ...i, quantity: i.quantity + delta } : i)
+        .map(i => itemKey(i) === key ? { ...i, quantity: i.quantity + delta } : i)
         .filter(i => i.quantity > 0)
     );
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(i => i.product.id !== productId));
+  const removeFromCart = (key: string) => {
+    setCart(prev => prev.filter(i => itemKey(i) !== key));
   };
 
   const cartTotal = cart.reduce((acc, item) => acc + item.quantity * item.product.salePrice, 0);
@@ -248,6 +267,7 @@ function SquishyStorefront() {
       note: orderNote.trim(),
       items: cart.map(i => ({
         productId: i.product.id,
+        variantId: i.variantId,
         quantity: i.quantity,
         unitPrice: i.product.salePrice,
       })),
@@ -432,9 +452,10 @@ function SquishyStorefront() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {filteredProducts.map(product => {
-              const isOut = product.currentStock <= 0;
+              const isOut = sellableStock(product) <= 0;
               const hasVideo = product.videos && product.videos.length > 0;
-              const inCart = cart.find(i => i.product.id === product.id);
+              const inCartQty = cart.filter(i => i.product.id === product.id).reduce((a, i) => a + i.quantity, 0);
+              const inCart = inCartQty > 0 ? { quantity: inCartQty } : null;
 
               return (
                 <div
@@ -533,7 +554,7 @@ function SquishyStorefront() {
                           isOut ? 'bg-slate-200 text-slate-500' : 'bg-[#FFB4B4] hover:bg-[#FFA0A0] text-black'
                         )}
                       >
-                        {isOut ? 'Hết' : '+ Giỏ'}
+                        {isOut ? 'Hết' : hasVariants(product) ? 'Chọn màu' : '+ Giỏ'}
                       </button>
                     </div>
                   </div>
@@ -589,14 +610,14 @@ function SquishyStorefront() {
               {/* Danh sách món */}
               <div className="divide-y border-2 border-black rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
                 {cart.map(item => (
-                  <div key={item.product.id} className="p-2.5 flex items-center gap-2.5 bg-card">
+                  <div key={itemKey(item)} className="p-2.5 flex items-center gap-2.5 bg-card">
                     <ProductImage
-                      src={item.product.mainImageUrl}
-                      alt={item.product.name}
+                      src={lineImage(item.product, item.variantId)}
+                      alt={lineName(item.product, item.variantId)}
                       className="w-12 h-12 rounded-xl border bg-rose-50 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold line-clamp-2 text-foreground leading-snug">{item.product.name}</h4>
+                      <h4 className="text-xs font-bold line-clamp-2 text-foreground leading-snug">{lineName(item.product, item.variantId)}</h4>
                       <span className="text-xs font-black text-rose-600">
                         {formatVND(item.product.salePrice * item.quantity)}
                       </span>
@@ -605,7 +626,7 @@ function SquishyStorefront() {
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.product.id, -1)}
+                        onClick={() => updateQuantity(itemKey(item), -1)}
                         aria-label="Giảm số lượng"
                         className="w-8 h-8 rounded-lg border-1.5 border-black bg-white flex items-center justify-center"
                       >
@@ -614,7 +635,7 @@ function SquishyStorefront() {
                       <span className="w-6 text-center text-sm font-black">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.product.id, 1)}
+                        onClick={() => updateQuantity(itemKey(item), 1)}
                         aria-label="Tăng số lượng"
                         className="w-8 h-8 rounded-lg border-1.5 border-black bg-[#FEF08A] flex items-center justify-center"
                       >
@@ -622,7 +643,7 @@ function SquishyStorefront() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => removeFromCart(itemKey(item))}
                         aria-label="Xóa khỏi giỏ"
                         className="w-8 h-8 flex items-center justify-center text-rose-500 hover:text-rose-700"
                       >
@@ -816,10 +837,15 @@ function SquishyStorefront() {
               ...(p.mainImageUrl ? [p.mainImageUrl] : []),
               ...(p.images?.map(img => img.url) || [])
             ];
-            const uniqueImages = Array.from(new Set(allImages.filter(Boolean)));
+            const withVariants = hasVariants(p);
+            const variant = findVariant(p, detailVariantId);
+            // Ảnh của màu đang chọn đứng đầu danh sách ảnh
+            const uniqueImages = Array.from(new Set([variant?.imageUrl, ...allImages].filter((x): x is string => !!x)));
             const currentImg = uniqueImages[activeImageIndex] || p.mainImageUrl;
             const hasVideo = p.videos && p.videos.length > 0;
-            const isOut = p.currentStock <= 0;
+            const stock = withVariants ? (variant ? variant.currentStock : 0) : p.currentStock;
+            const isOut = withVariants ? sellableStock(p) <= 0 : stock <= 0;
+            const needColor = withVariants && !variant;
 
             return (
               <div className="space-y-4">
@@ -958,7 +984,7 @@ function SquishyStorefront() {
                           </span>
                         ) : (
                           <span className="text-emerald-700 font-black flex items-center gap-1">
-                            🟢 Còn hàng: {p.currentStock} {p.unit || 'chiếc'} sẵn kho
+                            🟢 {needColor ? 'Chọn màu bạn thích bên dưới' : `Còn hàng: ${stock} ${p.unit || 'chiếc'} sẵn kho`}
                           </span>
                         )}
                       </div>
@@ -990,8 +1016,24 @@ function SquishyStorefront() {
                       </div>
                     )}
 
+                    {/* Chọn màu */}
+                    {withVariants && (
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-black text-slate-800">Màu sắc{variant ? `: ${variant.name}` : ''}</span>
+                        <VariantPicker
+                          variants={sellableVariants(p)}
+                          value={detailVariantId}
+                          onChange={id => {
+                            setDetailVariantId(id);
+                            setActiveImageIndex(0);
+                            setDetailQuantity(1);
+                          }}
+                        />
+                      </div>
+                    )}
+
                     {/* Quantity Selector */}
-                    {!isOut && (
+                    {!isOut && !needColor && (
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-black text-slate-800">Số lượng:</span>
                         <div className="flex items-center border-2 border-black rounded-xl bg-white shadow-[1.5px_1.5px_0px_#000]">
@@ -1005,7 +1047,7 @@ function SquishyStorefront() {
                           <span className="w-10 text-center font-black text-sm">{detailQuantity}</span>
                           <button
                             type="button"
-                            onClick={() => setDetailQuantity(Math.min(p.currentStock, detailQuantity + 1))}
+                            onClick={() => setDetailQuantity(Math.min(stock, detailQuantity + 1))}
                             className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-100 font-black cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" weight="bold" />
@@ -1017,12 +1059,10 @@ function SquishyStorefront() {
                     {/* Action Buttons */}
                     <div className="space-y-2 pt-2">
                       <button
-                        disabled={isOut}
+                        disabled={isOut || needColor}
                         type="button"
                         onClick={() => {
-                          for (let i = 0; i < detailQuantity; i++) {
-                            addToCart(p);
-                          }
+                          addToCart(p, variant?.id, detailQuantity);
                           setSelectedProductForDetail(null);
                         }}
                         className={cn(
@@ -1031,14 +1071,14 @@ function SquishyStorefront() {
                         )}
                       >
                         <ShoppingCart className="w-4 h-4" weight="bold" />
-                        <span>{isOut ? 'Tạm hết hàng' : `Thêm ${detailQuantity} món vào giỏ`}</span>
+                        <span>{isOut ? 'Tạm hết hàng' : needColor ? 'Vui lòng chọn màu' : `Thêm ${detailQuantity} món vào giỏ`}</span>
                       </button>
 
-                      {!isOut && (
+                      {!isOut && !needColor && (
                         <button
                           type="button"
                           onClick={() => {
-                            addToCart(p);
+                            addToCart(p, variant?.id);
                             setSelectedProductForDetail(null);
                             setIsCartOpen(true);
                           }}

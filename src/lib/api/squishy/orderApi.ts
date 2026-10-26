@@ -4,6 +4,9 @@ import type { MediaItem } from './mediaApi';
 export interface OrderDetailItem {
   id: string;
   productId: string;
+  variantId?: string;
+  variantName?: string;
+  /** Đã gồm màu: "Tên - Màu" */
   productName: string;
   mainImageUrl?: string;
   quantity: number;
@@ -59,6 +62,7 @@ export interface CreateOrderInput {
   shippingFee?: number;
   items: {
     productId: string;
+    variantId?: string;
     quantity: number;
     unitPrice: number;
   }[];

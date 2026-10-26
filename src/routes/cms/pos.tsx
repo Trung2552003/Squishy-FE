@@ -34,13 +34,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ProductImage } from '@/components/shop/product-image';
 import { cn, formatVND, getHubUrl } from '@/lib/utils';
+import { cartKey, hasVariants, lineImage, lineName, sellableStock, sellableVariants, stockOf } from '@/lib/variants';
 
 export const Route = createFileRoute('/cms/pos')({
   component: PosScreen,
 });
 
 interface CartItem {
+  key: string; // mỗi màu là 1 dòng riêng
   product: Product;
+  variantId?: string;
   quantity: number;
   unitPrice: number; // Có thể tùy chỉnh giá bán tại quầy
 }
@@ -52,6 +55,7 @@ function PosScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [pickingProduct, setPickingProduct] = useState<Product | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [customerName, setCustomerName] = useState<string>('Khách lẻ');
   const [customerPhone, setCustomerPhone] = useState<string>('');
@@ -119,46 +123,54 @@ function PosScreen() {
   }, [currentOrder, isPaymentSuccess, queryClient]);
 
   // Cart operations
-  const addToCart = (product: Product) => {
-    if (product.currentStock <= 0) {
-      toast.error(`Sản phẩm "${product.name}" đã hết hàng!`);
+  const addToCart = (product: Product, variantId?: string) => {
+    // Sản phẩm có màu: mở bảng chọn màu trước
+    if (hasVariants(product) && !variantId) {
+      setPickingProduct(product);
       return;
     }
-    const existing = cart.find(item => item.product.id === product.id);
-    if (existing && existing.quantity >= product.currentStock) {
-      toast.warning(`Tồn kho chỉ còn ${product.currentStock} ${product.unit}!`);
+    const stock = stockOf(product, variantId);
+    const name = lineName(product, variantId);
+    if (stock <= 0) {
+      toast.error(`"${name}" đã hết hàng!`);
+      return;
+    }
+    const key = cartKey(product.id, variantId);
+    const existing = cart.find(item => item.key === key);
+    if (existing && existing.quantity >= stock) {
+      toast.warning(`"${name}" chỉ còn ${stock} ${product.unit}!`);
       return;
     }
     setCart(prev =>
-      prev.some(item => item.product.id === product.id)
-        ? prev.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
-        : [...prev, { product, quantity: 1, unitPrice: product.salePrice }]
+      prev.some(item => item.key === key)
+        ? prev.map(item => item.key === key ? { ...item, quantity: item.quantity + 1 } : item)
+        : [...prev, { key, product, variantId, quantity: 1, unitPrice: product.salePrice }]
     );
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
-    const item = cart.find(i => i.product.id === productId);
-    if (item && item.quantity + delta > item.product.currentStock) {
-      toast.warning(`Tồn kho chỉ còn ${item.product.currentStock} ${item.product.unit}!`);
+  const updateQuantity = (key: string, delta: number) => {
+    const item = cart.find(i => i.key === key);
+    if (item && item.quantity + delta > stockOf(item.product, item.variantId)) {
+      toast.warning(`Tồn kho chỉ còn ${stockOf(item.product, item.variantId)} ${item.product.unit}!`);
       return;
     }
     setCart(prev =>
       prev
-        .map(i => i.product.id === productId ? { ...i, quantity: i.quantity + delta } : i)
+        .map(i => i.key === key ? { ...i, quantity: i.quantity + delta } : i)
         .filter(i => i.quantity > 0)
     );
   };
 
-  const updatePrice = (productId: string, newPrice: number) => {
+  const updatePrice = (key: string, newPrice: number) => {
     setCart(prev =>
       prev.map(item =>
-        item.product.id === productId ? { ...item, unitPrice: Math.max(0, newPrice || 0) } : item
+        item.key === key ? { ...item, unitPrice: Math.max(0, newPrice || 0) } : item
       )
     );
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product.id !== productId));
+  const removeFromCart = (key: string) => {
+    setCart(prev => prev.filter(item => item.key !== key));
   };
 
   const resetForNewOrder = () => {
@@ -182,7 +194,7 @@ function PosScreen() {
 
   // "Chữ ký" giỏ hàng: nếu không đổi gì thì mở lại đơn đang chờ thay vì tạo đơn trùng
   const currentSignature = JSON.stringify({
-    items: cart.map(i => [i.product.id, i.quantity, i.unitPrice]),
+    items: cart.map(i => [i.key, i.quantity, i.unitPrice]),
     discountAmount,
     paymentMethod,
     customerName,
@@ -224,6 +236,7 @@ function PosScreen() {
     note: orderNote.trim() || undefined,
     items: cart.map(item => ({
       productId: item.product.id,
+      variantId: item.variantId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
     })),
@@ -381,15 +394,15 @@ function PosScreen() {
           </div>
         ) : (
           cart.map(item => (
-            <div key={item.product.id} className="flex items-center gap-2 p-2 rounded-xl border-2 border-black bg-white shadow-[2px_2px_0px_#000]">
+            <div key={item.key} className="flex items-center gap-2 p-2 rounded-xl border-2 border-black bg-white shadow-[2px_2px_0px_#000]">
               <ProductImage
-                src={item.product.mainImageUrl}
-                alt={item.product.name}
+                src={lineImage(item.product, item.variantId)}
+                alt={lineName(item.product, item.variantId)}
                 className="w-11 h-11 rounded-lg border-1.5 border-black shrink-0"
               />
 
               <div className="flex-1 min-w-0">
-                <h5 className="text-xs font-black truncate text-slate-900 leading-tight">{item.product.name}</h5>
+                <h5 className="text-xs font-black truncate text-slate-900 leading-tight">{lineName(item.product, item.variantId)}</h5>
                 <div className="flex items-center gap-1 mt-1">
                   <input
                     type="number"
@@ -397,7 +410,7 @@ function PosScreen() {
                     min={0}
                     value={item.unitPrice}
                     onFocus={selectOnFocus}
-                    onChange={e => updatePrice(item.product.id, Number(e.target.value))}
+                    onChange={e => updatePrice(item.key, Number(e.target.value))}
                     aria-label="Đơn giá"
                     className="w-24 px-1.5 py-1 text-base sm:text-sm font-bold rounded-md border-1.5 border-black bg-[#FAF7EE] text-black"
                   />
@@ -407,7 +420,7 @@ function PosScreen() {
 
               <div className="flex items-center gap-1 shrink-0">
                 <button
-                  onClick={() => updateQuantity(item.product.id, -1)}
+                  onClick={() => updateQuantity(item.key, -1)}
                   aria-label="Giảm"
                   className="w-8 h-8 rounded-lg border-1.5 border-black bg-white shadow-[1px_1px_0px_#000] flex items-center justify-center hover:bg-slate-100"
                 >
@@ -415,7 +428,7 @@ function PosScreen() {
                 </button>
                 <span className="w-6 text-center font-black text-sm text-black">{item.quantity}</span>
                 <button
-                  onClick={() => updateQuantity(item.product.id, 1)}
+                  onClick={() => updateQuantity(item.key, 1)}
                   aria-label="Tăng"
                   className="w-8 h-8 rounded-lg border-1.5 border-black bg-[#FEF08A] shadow-[1px_1px_0px_#000] flex items-center justify-center hover:bg-[#FDE047]"
                 >
@@ -423,7 +436,7 @@ function PosScreen() {
                 </button>
               </div>
 
-              <button onClick={() => removeFromCart(item.product.id)} aria-label="Xóa món" className="text-rose-600 hover:text-rose-800 p-1">
+              <button onClick={() => removeFromCart(item.key)} aria-label="Xóa món" className="text-rose-600 hover:text-rose-800 p-1">
                 <Trash className="w-4 h-4" weight="bold" />
               </button>
             </div>
@@ -544,8 +557,10 @@ function PosScreen() {
           ) : (
             <div className="grid grid-cols-2 min-[560px]:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-3 pb-20 lg:pb-1">
               {filteredProducts.map(product => {
-                const isOutOfStock = product.currentStock <= 0;
-                const inCartItem = cart.find(i => i.product.id === product.id);
+                const available = sellableStock(product);
+                const isOutOfStock = available <= 0;
+                const inCartQty = cart.filter(i => i.product.id === product.id).reduce((a, i) => a + i.quantity, 0);
+                const inCartItem = inCartQty > 0 ? { quantity: inCartQty } : null;
 
                 return (
                   <button
@@ -569,10 +584,17 @@ function PosScreen() {
                       <ProductImage src={product.mainImageUrl} alt={product.name} className="w-full h-full" />
                       <span className={cn(
                         'absolute bottom-1 left-1 text-[10px] font-black px-1.5 py-0.5 rounded-md border-1.5 border-black',
-                        isOutOfStock ? 'bg-[#FECDD3]' : product.currentStock <= product.minStockAlert ? 'bg-[#FEF08A]' : 'bg-[#BBF7D0]'
+                        isOutOfStock ? 'bg-[#FECDD3]' : available <= product.minStockAlert ? 'bg-[#FEF08A]' : 'bg-[#BBF7D0]'
                       )}>
-                        {isOutOfStock ? 'Hết hàng' : `Còn ${product.currentStock}`}
+                        {isOutOfStock ? 'Hết hàng' : `Còn ${available}`}
                       </span>
+                      {hasVariants(product) && (
+                        <span className="absolute top-1 left-1 flex -space-x-1">
+                          {sellableVariants(product).slice(0, 5).map(v => (
+                            <span key={v.id} className="w-4 h-4 rounded-full border-1.5 border-white shadow" style={{ background: v.colorHex || '#e2e8f0' }} />
+                          ))}
+                        </span>
+                      )}
                     </div>
 
                     <h4 className="font-black text-xs sm:text-sm line-clamp-2 leading-snug mb-1 text-slate-900" title={product.name}>
@@ -663,9 +685,9 @@ function PosScreen() {
               {/* Hóa đơn tóm tắt (cũng là nội dung khi in) */}
               <div className="w-full border rounded-xl divide-y text-xs text-left">
                 {cart.map(item => (
-                  <div key={item.product.id} className="flex justify-between gap-2 px-3 py-1.5">
+                  <div key={item.key} className="flex justify-between gap-2 px-3 py-1.5">
                     <span className="min-w-0">
-                      <span className="font-semibold block truncate">{item.product.name}</span>
+                      <span className="font-semibold block truncate">{lineName(item.product, item.variantId)}</span>
                       <span className="text-muted-foreground">{item.quantity} x {formatVND(item.unitPrice)}</span>
                     </span>
                     <strong className="shrink-0">{formatVND(item.quantity * item.unitPrice)}</strong>
@@ -830,6 +852,39 @@ function PosScreen() {
               </Button>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+      {/* Chọn màu khi bấm sản phẩm có phân loại */}
+      <Dialog open={!!pickingProduct} onOpenChange={o => !o && setPickingProduct(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="pr-8">Chọn màu: {pickingProduct?.name}</DialogTitle>
+          </DialogHeader>
+          {pickingProduct && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {sellableVariants(pickingProduct).map(v => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    disabled={v.currentStock <= 0}
+                    onClick={() => {
+                      addToCart(pickingProduct, v.id);
+                      setPickingProduct(null);
+                    }}
+                    className="rounded-xl border-2 border-slate-200 hover:border-slate-900 p-1.5 text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ProductImage src={v.imageUrl || pickingProduct.mainImageUrl} alt={v.name} className="w-full aspect-square rounded-lg" />
+                    <span className="flex items-center gap-1 mt-1 text-xs font-bold">
+                      <span className="w-3 h-3 rounded-full border border-black/20 shrink-0" style={{ background: v.colorHex || '#e2e8f0' }} />
+                      <span className="truncate">{v.name}</span>
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">{v.currentStock > 0 ? `Còn ${v.currentStock}` : 'Hết hàng'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

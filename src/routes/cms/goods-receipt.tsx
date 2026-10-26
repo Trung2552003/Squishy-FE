@@ -19,7 +19,7 @@ import {
   type GoodsReceipt,
   type CreateGoodsReceiptInput
 } from '@/lib/api/squishy/goodsReceiptApi';
-import { productApi } from '@/lib/api/squishy/productApi';
+import { productApi, type Product } from '@/lib/api/squishy/productApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -38,6 +38,9 @@ const STOCK_TYPE_LABELS: Record<string, { label: string; className: string }> = 
   EXCHANGE_OUT: { label: 'Xuất đổi hàng (-)', className: 'bg-sky-100 text-sky-700' },
   DEFECTIVE: { label: 'Hàng lỗi khách trả', className: 'bg-rose-100 text-rose-700' },
   IMPORT_CANCEL: { label: 'Hủy phiếu nhập (-)', className: 'bg-slate-200 text-slate-700' },
+  ORDER_CANCEL: { label: 'Hủy đơn, hoàn kho (+)', className: 'bg-emerald-100 text-emerald-700' },
+  OPENING: { label: 'Tồn đầu kỳ (+)', className: 'bg-blue-100 text-blue-700' },
+  VARIANT_SPLIT: { label: 'Chia tồn sang màu', className: 'bg-violet-100 text-violet-700' },
 };
 
 function ReceiptStatusBadge({ status }: { status: string }) {
@@ -52,7 +55,7 @@ function ReceiptStatusBadge({ status }: { status: string }) {
   );
 }
 
-type ReceiptItem = { productId: string; quantity: number; unitPrice: number };
+type ReceiptItem = { productId: string; variantId?: string; quantity: number; unitPrice: number };
 
 function GoodsReceiptScreen() {
   const queryClient = useQueryClient();
@@ -153,10 +156,16 @@ function GoodsReceiptScreen() {
     onError: onMutationError,
   });
 
+  // Dòng mới cho 1 sản phẩm: có màu thì chọn sẵn màu đầu tiên, giá nhập gợi ý = giá vốn hiện tại
+  const rowFor = (product: Product): ReceiptItem => {
+    const variant = product.variants?.[0];
+    return { productId: product.id, variantId: variant?.id, quantity: 10, unitPrice: (variant?.costPrice || product.costPrice) || 0 };
+  };
+
   const newRow = (): ReceiptItem | null => {
     // Ưu tiên sản phẩm chưa có trong phiếu
     const product = products.find(p => !receiptItems.some(i => i.productId === p.id)) || products[0];
-    return product ? { productId: product.id, quantity: 10, unitPrice: product.costPrice || 0 } : null;
+    return product ? rowFor(product) : null;
   };
 
   const handleOpenCreate = () => {
@@ -164,7 +173,7 @@ function GoodsReceiptScreen() {
     setReceiptNote('');
     setShippingFee(0);
     const first = products[0];
-    setReceiptItems(first ? [{ productId: first.id, quantity: 10, unitPrice: first.costPrice || 0 }] : []);
+    setReceiptItems(first ? [rowFor(first)] : []);
     setIsCreateOpen(true);
   };
 
@@ -173,7 +182,7 @@ function GoodsReceiptScreen() {
     setSupplierId(r.supplierId || '');
     setReceiptNote(r.note || '');
     setShippingFee(r.shippingFee || 0);
-    setReceiptItems(r.details.map(d => ({ productId: d.productId, quantity: d.quantity, unitPrice: d.unitPrice })));
+    setReceiptItems(r.details.map(d => ({ productId: d.productId, variantId: d.variantId, quantity: d.quantity, unitPrice: d.unitPrice })));
     setIsDetailOpen(false);
     setIsCreateOpen(true);
   };
@@ -189,7 +198,11 @@ function GoodsReceiptScreen() {
       copy[index] = { ...copy[index], [field]: value };
       if (field === 'productId') {
         const prod = products.find(p => p.id === value);
-        if (prod) copy[index].unitPrice = prod.costPrice;
+        if (prod) copy[index] = { ...rowFor(prod), quantity: copy[index].quantity };
+      }
+      if (field === 'variantId') {
+        const variant = products.find(p => p.id === copy[index].productId)?.variants?.find(v => v.id === value);
+        if (variant?.costPrice) copy[index].unitPrice = variant.costPrice;
       }
       return copy;
     });
@@ -219,6 +232,11 @@ function GoodsReceiptScreen() {
       toast.error('Số lượng nhập phải lớn hơn 0.');
       return;
     }
+    const missingColor = receiptItems.find(i => !i.variantId && products.find(p => p.id === i.productId)?.variants?.length);
+    if (missingColor) {
+      toast.error('Vui lòng chọn màu cho các sản phẩm có phân loại.');
+      return;
+    }
 
     const payload: CreateGoodsReceiptInput = {
       supplierId: supplierId || undefined,
@@ -226,6 +244,7 @@ function GoodsReceiptScreen() {
       shippingFee,
       items: receiptItems.map(i => ({
         productId: i.productId,
+        variantId: i.variantId,
         quantity: Number(i.quantity),
         unitPrice: Number(i.unitPrice),
       })),
@@ -503,16 +522,35 @@ function GoodsReceiptScreen() {
               <div className="space-y-2.5">
                 {receiptItems.map((item, idx) => (
                   <div key={idx} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_5rem_7.5rem_6.5rem_auto] items-center gap-2 p-2.5 bg-background rounded-xl border">
-                    <select
-                      value={item.productId}
-                      onChange={e => updateItem(idx, 'productId', e.target.value)}
-                      aria-label="Sản phẩm"
-                      className="h-10 sm:h-9 text-base sm:text-sm min-w-0"
-                    >
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                      ))}
-                    </select>
+                    <div className="flex flex-col min-[480px]:flex-row gap-2 min-w-0">
+                      <select
+                        value={item.productId}
+                        onChange={e => updateItem(idx, 'productId', e.target.value)}
+                        aria-label="Sản phẩm"
+                        className="h-10 sm:h-9 text-base sm:text-sm min-w-0 flex-1"
+                      >
+                        {products.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                        ))}
+                      </select>
+                      {(() => {
+                        const variants = products.find(p => p.id === item.productId)?.variants ?? [];
+                        if (variants.length === 0) return null;
+                        return (
+                          <select
+                            value={item.variantId || ''}
+                            onChange={e => updateItem(idx, 'variantId', e.target.value)}
+                            aria-label="Màu"
+                            className="h-10 sm:h-9 text-base sm:text-sm min-w-0 min-[480px]:w-32"
+                          >
+                            <option value="" disabled>-- Màu --</option>
+                            {variants.map(v => (
+                              <option key={v.id} value={v.id}>{v.name} (tồn {v.currentStock}){v.isActive ? '' : ' • ngừng bán'}</option>
+                            ))}
+                          </select>
+                        );
+                      })()}
+                    </div>
 
                     <button type="button" onClick={() => removeItemRow(idx)} aria-label="Xóa dòng" className="sm:order-last text-muted-foreground hover:text-rose-500 p-1.5">
                       <Trash className="w-4 h-4" />

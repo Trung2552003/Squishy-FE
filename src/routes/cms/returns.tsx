@@ -25,6 +25,8 @@ import {
   type UpdateReturnStatusInput
 } from '@/lib/api/squishy/returnApi';
 import { productApi } from '@/lib/api/squishy/productApi';
+import { VariantPicker } from '@/components/shop/variant-picker';
+import { hasVariants, sellableStock, sellableVariants } from '@/lib/variants';
 import { mediaApi } from '@/lib/api/squishy/mediaApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -304,6 +306,8 @@ interface LineState {
   quantity: number;
   condition: ItemCondition;
   exchangeProductId: string;
+  /** Màu giao cho khách khi đổi (sản phẩm có phân loại) */
+  exchangeVariantId?: string;
 }
 
 const allowedReasons = (type: ReturnType): ReasonCategory[] =>
@@ -364,6 +368,13 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
     setSubmittedCode(code.trim());
   };
 
+  const defaultExchangeVariant = (i: ReturnableOrder['items'][number], productId: string) => {
+    const prod = products.find(p => p.id === productId);
+    if (!prod || !hasVariants(prod)) return undefined;
+    if (productId === i.productId && i.variantId) return i.variantId;
+    return sellableVariants(prod).find(v => v.currentStock > 0)?.id;
+  };
+
   const lineOf = (i: ReturnableOrder['items'][number]): LineState => {
     const edit = lineEdits[i.orderDetailId] ?? {};
     return {
@@ -371,6 +382,7 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
       quantity: edit.quantity ?? (requestType === 'FAILED_DELIVERY' ? i.returnableQuantity : 0),
       condition: edit.condition ?? (reasonCategory === 'DEFECTIVE' ? 'DEFECTIVE' : 'GOOD'),
       exchangeProductId: edit.exchangeProductId ?? i.productId,
+      exchangeVariantId: 'exchangeVariantId' in edit ? edit.exchangeVariantId : defaultExchangeVariant(i, edit.exchangeProductId ?? i.productId),
     };
   };
 
@@ -465,6 +477,7 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
           quantity: l.quantity,
           itemCondition: l.condition,
           exchangeProductId: requestType === 'EXCHANGE' ? l.exchangeProductId : undefined,
+          exchangeVariantId: requestType === 'EXCHANGE' ? l.exchangeVariantId : undefined,
           exchangeQuantity: requestType === 'EXCHANGE' ? l.quantity : 0,
         };
       }),
@@ -621,18 +634,37 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
                             <span className="text-xs font-semibold text-muted-foreground shrink-0">Đổi sang:</span>
                             <select
                               value={l.exchangeProductId}
-                              onChange={e => updateLine(i.orderDetailId, { exchangeProductId: e.target.value })}
+                              onChange={e => {
+                                const productId = e.target.value;
+                                updateLine(i.orderDetailId, { exchangeProductId: productId, exchangeVariantId: defaultExchangeVariant(i, productId) });
+                              }}
                               className="sm:flex-1 min-w-0 h-9 text-base sm:text-sm"
                             >
-                              <option value={i.productId}>Cùng mẫu: {i.productName}</option>
+                              <option value={i.productId}>Cùng mẫu: {products.find(p => p.id === i.productId)?.name ?? i.productName}</option>
                               {products.filter(p => p.id !== i.productId).map(p => (
-                                <option key={p.id} value={p.id} disabled={p.currentStock < l.quantity}>
-                                  {p.name} – {formatVND(p.salePrice)} (còn {p.currentStock})
+                                <option key={p.id} value={p.id} disabled={sellableStock(p) < l.quantity}>
+                                  {p.name} – {formatVND(p.salePrice)} (còn {sellableStock(p)})
                                 </option>
                               ))}
                             </select>
                           </label>
                         )}
+                        {l.quantity > 0 && requestType === 'EXCHANGE' && (() => {
+                          const ex = products.find(p => p.id === l.exchangeProductId);
+                          if (!ex || !hasVariants(ex)) return null;
+                          return (
+                            <div className="space-y-1">
+                              <span className="text-xs font-semibold text-muted-foreground">Màu giao cho khách:</span>
+                              <VariantPicker
+                                size="sm"
+                                showStock
+                                variants={sellableVariants(ex)}
+                                value={l.exchangeVariantId}
+                                onChange={id => updateLine(i.orderDetailId, { exchangeVariantId: id })}
+                              />
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

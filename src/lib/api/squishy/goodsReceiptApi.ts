@@ -14,6 +14,8 @@ export interface Supplier {
 export interface GoodsReceiptItem {
   id: string;
   productId: string;
+  variantId?: string;
+  variantName?: string;
   productName?: string;
   sku?: string;
   quantity: number;
@@ -48,6 +50,7 @@ export interface CreateGoodsReceiptInput {
   shippingFee?: number;
   items: {
     productId: string;
+    variantId?: string;
     quantity: number;
     unitPrice: number;
   }[];

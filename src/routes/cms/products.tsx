@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { VariantEditor, toVariantDrafts, type VariantDraft } from '@/components/shop/variant-editor';
 import { PageHeader, EmptyState, LoadingState } from '@/components/shop/page-header';
 import { ProductImage } from '@/components/shop/product-image';
 import { cn, formatVND, getFileUrl } from '@/lib/utils';
@@ -31,6 +32,24 @@ export const Route = createFileRoute('/cms/products')({
 });
 
 const PAGE_SIZE = 15;
+
+function VariantDots({ product }: { product: Product }) {
+  if (!product.variants?.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {product.variants.map(v => (
+        <span
+          key={v.id}
+          title={`${v.name}: ${v.currentStock}${v.isActive ? '' : ' (ngừng bán)'}`}
+          className={cn('inline-flex items-center gap-1 rounded-full border bg-white pl-0.5 pr-1.5 text-[10px] font-semibold', !v.isActive && 'opacity-50 line-through')}
+        >
+          <span className="w-3 h-3 rounded-full border border-black/20" style={{ background: v.colorHex || '#e2e8f0' }} />
+          {v.name} · {v.currentStock}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function ProductsScreen() {
   const queryClient = useQueryClient();
@@ -57,6 +76,7 @@ function ProductsScreen() {
   const [formSquishyType, setFormSquishyType] = useState('Slow-rising');
   const [formDescription, setFormDescription] = useState('');
   const [formMainImageUrl, setFormMainImageUrl] = useState('');
+  const [formVariants, setFormVariants] = useState<VariantDraft[]>([]);
 
   // Media (Images & Videos)
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -164,6 +184,7 @@ function ProductsScreen() {
     setFormMainImageUrl('');
     setUploadedImages([]);
     setUploadedVideos([]);
+    setFormVariants([]);
     setIsModalOpen(true);
   };
 
@@ -182,6 +203,7 @@ function ProductsScreen() {
     setFormMainImageUrl(p.mainImageUrl || '');
     setUploadedImages(p.images?.length ? p.images.map(i => i.url) : (p.mainImageUrl ? [p.mainImageUrl] : []));
     setUploadedVideos(p.videos?.map(v => v.url) || []);
+    setFormVariants(toVariantDrafts(p.variants));
     setIsModalOpen(true);
   };
 
@@ -193,6 +215,10 @@ function ProductsScreen() {
     }
     if (formSalePrice <= 0) {
       toast.error('Giá bán phải lớn hơn 0.');
+      return;
+    }
+    if (formVariants.some(v => !v.name.trim())) {
+      toast.error('Vui lòng nhập tên cho tất cả các màu.');
       return;
     }
 
@@ -210,7 +236,15 @@ function ProductsScreen() {
       mainImageUrl: formMainImageUrl || uploadedImages[0] || '',
       isActive: true,
       imageUrls: uploadedImages,
-      videoUrls: uploadedVideos
+      videoUrls: uploadedVideos,
+      variants: formVariants.map(v => ({
+        id: v.id,
+        name: v.name.trim(),
+        colorHex: v.colorHex,
+        imageUrl: v.imageUrl,
+        isActive: v.isActive,
+        initialStock: v.id ? undefined : v.initialStock,
+      })),
     };
 
     if (editingProduct) {
@@ -363,6 +397,7 @@ function ProductsScreen() {
                   <ProductImage src={p.mainImageUrl} alt={p.name} className="w-16 h-16 rounded-xl border-2 border-black shrink-0" />
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="font-black text-slate-900 text-sm leading-snug line-clamp-2">{p.name}</div>
+                    <VariantDots product={p} />
                     <div className="flex flex-wrap items-center gap-1 text-[10px]">
                       <span className="border-1.5 border-black rounded-md px-1.5 font-black bg-[#BAE6FD]">{p.sku}</span>
                       <span className="border-1.5 border-black rounded-md px-1.5 font-bold bg-[#E0E7FF] truncate max-w-32">{p.categoryName || 'Chưa phân loại'}</span>
@@ -412,6 +447,7 @@ function ProductsScreen() {
                           <ProductImage src={p.mainImageUrl} alt={p.name} className="w-12 h-12 rounded-xl border-2 border-black shadow-[1px_1px_0px_#000] shrink-0" />
                           <div className="min-w-0">
                             <div className="font-black text-slate-900 text-sm line-clamp-2">{p.name}</div>
+                            <VariantDots product={p} />
                             <div className="text-xs flex flex-wrap items-center gap-1.5 mt-1">
                               <span className="border-1.5 border-black rounded-md px-1.5 text-[10px] font-black bg-[#BAE6FD]">{p.sku}</span>
                               {p.squishyType && (
@@ -557,8 +593,17 @@ function ProductsScreen() {
 
               <div>
                 <label htmlFor="p-stock" className={labelClass}>Số Lượng Tồn Kho</label>
-                <Input id="p-stock" type="number" inputMode="numeric" min={0} value={formCurrentStock} onChange={e => setFormCurrentStock(Number(e.target.value))} className={cn(fieldClass, 'font-semibold')} />
-                {!editingProduct && (
+                {formVariants.length > 0 ? (
+                  <div id="p-stock" className={cn(fieldClass, 'flex items-center px-3 border bg-muted/40 font-semibold')}>
+                    {editingProduct && editingProduct.variants?.length
+                      ? formVariants.reduce((a, v) => a + (v.currentStock ?? 0), 0) + formVariants.filter(v => !v.id).reduce((a, v) => a + v.initialStock, 0)
+                      : formCurrentStock + formVariants.reduce((a, v) => a + v.initialStock, 0)}{' '}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">(tổng các màu)</span>
+                  </div>
+                ) : (
+                  <Input id="p-stock" type="number" inputMode="numeric" min={0} value={formCurrentStock} onChange={e => setFormCurrentStock(Number(e.target.value))} className={cn(fieldClass, 'font-semibold')} />
+                )}
+                {!editingProduct && formVariants.length === 0 && (
                   <p className="text-xs text-muted-foreground mt-1">Nên để 0, rồi nhập hàng qua Phiếu nhập kho để báo cáo tính đúng giá vốn và tiền nhập hàng.</p>
                 )}
               </div>
@@ -568,6 +613,12 @@ function ProductsScreen() {
                 <Input id="p-min" type="number" inputMode="numeric" min={0} value={formMinStockAlert} onChange={e => setFormMinStockAlert(Number(e.target.value))} className={fieldClass} />
               </div>
             </div>
+
+            <VariantEditor
+              value={formVariants}
+              onChange={setFormVariants}
+              stockToMove={editingProduct && !editingProduct.variants?.length ? editingProduct.currentStock : formCurrentStock}
+            />
 
             <div>
               <label htmlFor="p-desc" className={labelClass}>Mô tả chi tiết</label>

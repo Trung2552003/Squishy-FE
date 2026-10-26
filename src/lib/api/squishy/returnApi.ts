@@ -16,6 +16,7 @@ export interface ReturnItem {
   unitPrice: number;
   itemCondition: ItemCondition;
   exchangeProductId?: string;
+  exchangeVariantId?: string;
   exchangeProductName?: string;
   exchangeQuantity: number;
   exchangeUnitPrice: number;
@@ -48,6 +49,7 @@ export interface ReturnRequest {
 export interface ReturnableOrderItem {
   orderDetailId: string;
   productId: string;
+  variantId?: string;
   productName: string;
   mainImageUrl?: string;
   quantity: number;
@@ -84,6 +86,7 @@ export interface CreateReturnInput {
     quantity: number;
     itemCondition: ItemCondition;
     exchangeProductId?: string;
+    exchangeVariantId?: string;
     exchangeQuantity: number;
   }[];
 }
