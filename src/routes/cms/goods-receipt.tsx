@@ -9,7 +9,9 @@ import {
   Eye,
   CheckCircle,
   ArrowsLeftRight,
-  PlusCircle
+  PlusCircle,
+  XCircle,
+  Copy
 } from '@phosphor-icons/react';
 
 import {
@@ -35,7 +37,20 @@ const STOCK_TYPE_LABELS: Record<string, { label: string; className: string }> = 
   RETURN_IN: { label: 'Khách trả, nhập lại (+)', className: 'bg-emerald-100 text-emerald-700' },
   EXCHANGE_OUT: { label: 'Xuất đổi hàng (-)', className: 'bg-sky-100 text-sky-700' },
   DEFECTIVE: { label: 'Hàng lỗi khách trả', className: 'bg-rose-100 text-rose-700' },
+  IMPORT_CANCEL: { label: 'Hủy phiếu nhập (-)', className: 'bg-slate-200 text-slate-700' },
 };
+
+function ReceiptStatusBadge({ status }: { status: string }) {
+  return status === 'CANCELLED' ? (
+    <span className="inline-flex items-center gap-1 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-md whitespace-nowrap">
+      <XCircle className="w-3.5 h-3.5" /> Đã hủy
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-md whitespace-nowrap">
+      <CheckCircle className="w-3.5 h-3.5" /> Đã nhập kho
+    </span>
+  );
+}
 
 type ReceiptItem = { productId: string; quantity: number; unitPrice: number };
 
@@ -50,6 +65,9 @@ function GoodsReceiptScreen() {
 
   const [supplierId, setSupplierId] = useState('');
   const [receiptNote, setReceiptNote] = useState('');
+  const [shippingFee, setShippingFee] = useState(0);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
 
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
@@ -106,6 +124,19 @@ function GoodsReceiptScreen() {
     onError: onMutationError,
   });
 
+  const cancelReceiptMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => goodsReceiptApi.cancel(id, reason),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Đã hủy phiếu nhập');
+      setIsCancelOpen(false);
+      setCancelReason('');
+      if (res.data) setSelectedReceipt(res.data);
+      ['goodsReceipts', 'stockTransactions', 'squishyActiveProducts', 'squishyActiveProductsAll', 'squishyProductsPaged', 'reportSummary', 'reportChart']
+        .forEach(k => queryClient.invalidateQueries({ queryKey: [k] }));
+    },
+    onError: onMutationError,
+  });
+
   const createSupplierMutation = useMutation({
     mutationFn: goodsReceiptApi.createSupplier,
     onSuccess: (res) => {
@@ -131,8 +162,19 @@ function GoodsReceiptScreen() {
   const handleOpenCreate = () => {
     setSupplierId(suppliers[0]?.id || '');
     setReceiptNote('');
+    setShippingFee(0);
     const first = products[0];
     setReceiptItems(first ? [{ productId: first.id, quantity: 10, unitPrice: first.costPrice || 0 }] : []);
+    setIsCreateOpen(true);
+  };
+
+  // Nhập nhầm: mở phiếu mới điền sẵn nội dung của phiếu cũ để sửa lại cho đúng
+  const copyToNewReceipt = (r: GoodsReceipt) => {
+    setSupplierId(r.supplierId || '');
+    setReceiptNote(r.note || '');
+    setShippingFee(r.shippingFee || 0);
+    setReceiptItems(r.details.map(d => ({ productId: d.productId, quantity: d.quantity, unitPrice: d.unitPrice })));
+    setIsDetailOpen(false);
     setIsCreateOpen(true);
   };
 
@@ -157,7 +199,15 @@ function GoodsReceiptScreen() {
     setReceiptItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  const totalReceiptAmount = receiptItems.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
+  const goodsAmount = receiptItems.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
+  const totalReceiptAmount = goodsAmount + shippingFee;
+  const totalQty = receiptItems.reduce((acc, item) => acc + Number(item.quantity || 0), 0);
+  // Giá vốn thực 1 chiếc (xem trước): giá nhập + phí ship phân bổ theo giá trị dòng hàng
+  const landedCost = (item: ReceiptItem) => {
+    if (!shippingFee || item.quantity <= 0) return item.unitPrice;
+    const share = goodsAmount > 0 ? (item.quantity * item.unitPrice) / goodsAmount : item.quantity / Math.max(1, totalQty);
+    return item.unitPrice + (shippingFee * share) / item.quantity;
+  };
 
   const handleSubmitReceipt = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +223,7 @@ function GoodsReceiptScreen() {
     const payload: CreateGoodsReceiptInput = {
       supplierId: supplierId || undefined,
       note: receiptNote.trim(),
+      shippingFee,
       items: receiptItems.map(i => ({
         productId: i.productId,
         quantity: Number(i.quantity),
@@ -270,12 +321,13 @@ function GoodsReceiptScreen() {
                     key={r.id}
                     type="button"
                     onClick={() => openReceiptDetail(r)}
-                    className="w-full text-left p-3 space-y-1 hover:bg-[#FAF7EE]/60"
+                    className={cn('w-full text-left p-3 space-y-1 hover:bg-[#FAF7EE]/60', r.status === 'CANCELLED' && 'opacity-60')}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-mono font-black text-sm">{r.code}</span>
-                      <span className="font-black text-rose-600 shrink-0">{formatVND(r.totalAmount)}</span>
+                      <span className={cn('font-black shrink-0', r.status === 'CANCELLED' ? 'line-through text-slate-500' : 'text-rose-600')}>{formatVND(r.totalAmount)}</span>
                     </div>
+                    {r.status === 'CANCELLED' && <ReceiptStatusBadge status={r.status} />}
                     <div className="text-xs text-foreground font-semibold">{r.supplierName || 'NCC vãng lai'}</div>
                     <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
                       <span>{new Date(r.receiptDate).toLocaleDateString('vi-VN')}{r.note ? ` • ${r.note}` : ''}</span>
@@ -300,16 +352,15 @@ function GoodsReceiptScreen() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {receipts.map(r => (
-                      <tr key={r.id} className="hover:bg-[#FAF7EE]/60 transition-colors">
+                      <tr key={r.id} className={cn('hover:bg-[#FAF7EE]/60 transition-colors', r.status === 'CANCELLED' && 'opacity-60')}>
                         <td className="py-3 px-4 font-mono font-bold whitespace-nowrap">{r.code}</td>
                         <td className="py-3 px-4 font-medium">{r.supplierName || 'NCC vãng lai'}</td>
                         <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{new Date(r.receiptDate).toLocaleDateString('vi-VN')}</td>
-                        <td className="py-3 px-4 font-bold text-rose-600 whitespace-nowrap">{formatVND(r.totalAmount)}</td>
-                        <td className="py-3 px-4 hidden lg:table-cell">
-                          <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-md whitespace-nowrap">
-                            <CheckCircle className="w-3.5 h-3.5" /> Đã nhập kho
-                          </span>
+                        <td className={cn('py-3 px-4 font-bold whitespace-nowrap', r.status === 'CANCELLED' ? 'line-through text-slate-500' : 'text-rose-600')}>
+                          {formatVND(r.totalAmount)}
+                          {r.shippingFee > 0 && <span className="block text-[11px] font-semibold text-muted-foreground no-underline">gồm ship {formatVND(r.shippingFee)}</span>}
                         </td>
+                        <td className="py-3 px-4 hidden lg:table-cell"><ReceiptStatusBadge status={r.status} /></td>
                         <td className="py-3 px-4 text-muted-foreground max-w-xs truncate hidden xl:table-cell">{r.note || '—'}</td>
                         <td className="py-3 px-4 text-right">
                           <Button variant="ghost" size="sm" onClick={() => openReceiptDetail(r)} disabled={loadingReceiptId === r.id} className="rounded-lg text-xs">
@@ -495,15 +546,43 @@ function GoodsReceiptScreen() {
                       <div className="flex flex-col justify-end sm:block text-right">
                         <span className="text-[10px] text-muted-foreground sm:hidden">Thành tiền</span>
                         <span className="text-xs font-bold leading-10 sm:leading-normal">{formatVND(item.quantity * item.unitPrice)}</span>
+                        {shippingFee > 0 && (
+                          <span className="block text-[10px] text-muted-foreground whitespace-nowrap">vốn {formatVND(Math.round(landedCost(item)))}/chiếc</span>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t font-bold text-sm">
-                <span>Tổng tiền nhập</span>
-                <span className="text-base text-rose-600">{formatVND(totalReceiptAmount)}</span>
+              <div className="pt-2 border-t space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Tiền hàng</span>
+                  <span className="font-semibold tabular-nums">{formatVND(goodsAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor="gr-ship" className="text-muted-foreground">Phí vận chuyển nhập hàng</label>
+                  <div className="relative w-36">
+                    <Input
+                      id="gr-ship"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={shippingFee ? shippingFee.toLocaleString('vi-VN') : ''}
+                      onChange={e => setShippingFee(Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0))}
+                      className="h-9 rounded-xl pr-7 text-right font-semibold tabular-nums"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">đ</span>
+                  </div>
+                </div>
+                {shippingFee > 0 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Phí ship được chia vào giá vốn từng sản phẩm theo giá trị hàng, để lợi nhuận tính đúng khi bán.
+                  </p>
+                )}
+                <div className="flex items-center justify-between font-bold">
+                  <span>Tổng tiền phiếu</span>
+                  <span className="text-base text-rose-600 tabular-nums">{formatVND(totalReceiptAmount)}</span>
+                </div>
               </div>
             </div>
 
@@ -548,6 +627,46 @@ function GoodsReceiptScreen() {
         </DialogContent>
       </Dialog>
 
+      {/* XÁC NHẬN HỦY PHIẾU NHẬP */}
+      <Dialog open={isCancelOpen} onOpenChange={o => { setIsCancelOpen(o); if (!o) setCancelReason(''); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hủy phiếu {selectedReceipt?.code}?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <ul className="list-disc pl-5 space-y-1 text-slate-700">
+              <li>Trừ lại số lượng đã nhập khỏi tồn kho và tính lại giá vốn.</li>
+              <li>Phiếu được giữ lại với trạng thái <strong>Đã hủy</strong>, không tính vào báo cáo.</li>
+              <li>Nếu hàng của phiếu đã bán bớt thì không hủy được.</li>
+            </ul>
+            <label htmlFor="gr-cancel-reason" className="block">
+              <span className="font-semibold block mb-1.5">Lý do hủy</span>
+              <textarea
+                id="gr-cancel-reason"
+                rows={2}
+                maxLength={500}
+                placeholder="VD: Nhập sai số lượng, nhập nhầm sản phẩm..."
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border bg-background text-base sm:text-sm"
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">Sau khi hủy, bấm "Sao chép thành phiếu mới" để nhập lại cho đúng.</p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsCancelOpen(false)} className="rounded-xl h-10">Không hủy</Button>
+            <Button
+              type="button"
+              disabled={cancelReceiptMutation.isPending || !selectedReceipt}
+              onClick={() => selectedReceipt && cancelReceiptMutation.mutate({ id: selectedReceipt.id, reason: cancelReason.trim() || undefined })}
+              className="rounded-xl h-10 bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {cancelReceiptMutation.isPending ? 'Đang hủy...' : 'Hủy phiếu & trừ kho'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* MODAL CHI TIẾT PHIẾU NHẬP */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -574,6 +693,13 @@ function GoodsReceiptScreen() {
                     <span>{selectedReceipt.note}</span>
                   </div>
                 )}
+                <div className="min-[420px]:col-span-2"><ReceiptStatusBadge status={selectedReceipt.status} /></div>
+                {selectedReceipt.status === 'CANCELLED' && (
+                  <div className="min-[420px]:col-span-2 text-slate-600">
+                    Hủy lúc {selectedReceipt.cancelledAt ? new Date(selectedReceipt.cancelledAt).toLocaleString('vi-VN') : ''}
+                    {selectedReceipt.cancelReason ? ` • Lý do: ${selectedReceipt.cancelReason}` : ''}
+                  </div>
+                )}
               </div>
 
               <div className="divide-y border rounded-xl overflow-hidden">
@@ -590,14 +716,35 @@ function GoodsReceiptScreen() {
                     <div className="text-right shrink-0">
                       <div>{d.quantity} x {formatVND(d.unitPrice)}</div>
                       <strong className="text-rose-600">{formatVND(d.totalPrice)}</strong>
+                      {d.landedUnitCost != null && d.landedUnitCost !== d.unitPrice && (
+                        <div className="text-[10px] text-muted-foreground">vốn gồm ship {formatVND(d.landedUnitCost)}/chiếc</div>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
 
+              {selectedReceipt.shippingFee > 0 && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Phí vận chuyển (đã chia vào giá vốn)</span>
+                  <span className="font-semibold">{formatVND(selectedReceipt.shippingFee)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between font-bold text-base pt-1">
                 <span>Tổng tiền phiếu</span>
-                <span className="text-rose-600">{formatVND(selectedReceipt.totalAmount)}</span>
+                <span className={selectedReceipt.status === 'CANCELLED' ? 'line-through text-slate-500' : 'text-rose-600'}>{formatVND(selectedReceipt.totalAmount)}</span>
+              </div>
+
+              {/* Xử lý phiếu nhập nhầm */}
+              <div className="flex flex-col min-[420px]:flex-row gap-2 pt-3 border-t">
+                <Button type="button" variant="outline" onClick={() => copyToNewReceipt(selectedReceipt)} className="rounded-xl h-10 min-[420px]:flex-1">
+                  <Copy className="w-4 h-4 mr-1" /> Sao chép thành phiếu mới
+                </Button>
+                {selectedReceipt.status !== 'CANCELLED' && (
+                  <Button type="button" variant="outline" onClick={() => setIsCancelOpen(true)} className="rounded-xl h-10 min-[420px]:flex-1 text-rose-600 hover:bg-rose-50">
+                    <XCircle className="w-4 h-4 mr-1" /> Hủy phiếu nhập
+                  </Button>
+                )}
               </div>
             </div>
           )}

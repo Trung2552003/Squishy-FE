@@ -19,6 +19,8 @@ export interface GoodsReceiptItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  /** Giá vốn thực của 1 chiếc = giá nhập + phí ship phân bổ */
+  landedUnitCost?: number;
 }
 
 export interface GoodsReceipt {
@@ -27,8 +29,12 @@ export interface GoodsReceipt {
   supplierId?: string;
   supplierName?: string;
   receiptDate: string;
+  /** Tổng phiếu = tiền hàng + phí vận chuyển */
   totalAmount: number;
-  status: string;
+  shippingFee: number;
+  status: 'COMPLETED' | 'CANCELLED' | string;
+  cancelledAt?: string;
+  cancelReason?: string;
   note?: string;
   createdAt: string;
   details: GoodsReceiptItem[];
@@ -39,6 +45,7 @@ export interface CreateGoodsReceiptInput {
   supplierName?: string;
   receiptDate?: string;
   note?: string;
+  shippingFee?: number;
   items: {
     productId: string;
     quantity: number;
@@ -84,5 +91,9 @@ export const goodsReceiptApi = {
     return apiClient.get<any, { isSuccess: boolean; data: StockTransaction[] }>(
       `/GoodsReceipt/stock-transactions${productId ? `?productId=${productId}` : ''}`
     );
-  }
+  },
+
+  cancel: async (id: string, reason?: string) => {
+    return apiClient.post<any, { isSuccess: boolean; data: GoodsReceipt; message: string }>(`/GoodsReceipt/${id}/cancel`, { reason });
+  },
 };
