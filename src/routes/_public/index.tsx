@@ -262,6 +262,8 @@ function SquishyStorefront() {
       orderType: 'DELIVERY',
       shippingAddress: shippingAddress.trim(),
       shippingFee,
+      // Đơn được miễn ship: shop trả phí ship (shop nhập phí thực tế khi gửi hàng)
+      shippingPayer: shippingFee === 0 ? 'SENDER' : 'RECEIVER',
       discountAmount: 0,
       paymentMethod: paymentMethod === 'BANK_TRANSFER_QR' ? 'BANK_TRANSFER_QR' : 'COD',
       note: orderNote.trim(),

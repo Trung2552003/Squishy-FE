@@ -125,7 +125,7 @@ function ReportsScreen() {
               { label: 'Giá trị tồn kho', value: formatVND(s.totalInventoryValue), note: `${s.lowStockCount} sản phẩm sắp hết`, warn: s.lowStockCount > 0, icon: Package },
               { label: 'Đơn tạo trong kỳ', value: s.totalOrders.toLocaleString('vi-VN'), note: `${s.completedOrders} hoàn tất` },
               { label: 'Đơn đã hủy', value: s.cancelledOrders.toLocaleString('vi-VN'), note: 'Không tính doanh thu' },
-              { label: 'Phí ship thu của khách', value: formatVND(s.shippingFeeCollected), note: 'Đã nằm trong doanh thu' },
+              { label: 'Phí ship shop trả', value: formatVND(s.shippingExpense), note: `Ship khách trả (thu hộ): ${formatVND(s.shippingFeeCollected)}` },
             ].map(k => (
               <div key={k.label} className="doodle-card p-3 min-w-0">
                 <div className="text-[10px] sm:text-xs font-black text-slate-600 uppercase">{k.label}</div>
@@ -262,12 +262,13 @@ function ProfitLossCard({ s }: { s: DashboardSummary }) {
     <div className="doodle-card overflow-hidden">
       <h3 className="px-4 pt-4 pb-2 font-black text-sm sm:text-base">Kết quả kinh doanh (lãi / lỗ)</h3>
       <div className="divide-y text-sm">
-        <Line label="Tiền bán hàng đã thu" value={s.salesRevenue} hint={`${s.paidOrders} đơn, gồm ${formatVND(s.shippingFeeCollected)} phí ship`} />
+        <Line label="Tiền bán hàng đã thu" value={s.salesRevenue} hint={`${s.paidOrders} đơn, không gồm ${formatVND(s.shippingFeeCollected)} phí ship khách trả (thu hộ)`} />
         <Line sign="−" label="Hoàn tiền đổi trả" value={s.returnRefunds} muted={!s.returnRefunds} />
         <Line sign="+" label="Thu thêm khi đổi trả / sửa" value={s.returnExtraCharges} muted={!s.returnExtraCharges} />
         <Line strong label="Doanh thu thuần" value={s.totalRevenue} />
         <Line sign="−" label="Giá vốn hàng bán" value={s.cogs} hint={s.repairCost ? `gồm ${formatVND(s.repairCost)} chi phí sửa hàng` : 'theo giá nhập lúc bán, đã trừ hàng trả về kho'} />
         <Line strong label={`Lợi nhuận gộp${margin ? ` (${margin}%)` : ''}`} value={s.grossProfit} />
+        <Line sign="−" label="Phí ship shop trả" value={s.shippingExpense} muted={!s.shippingExpense} hint={'Đơn giao hàng chọn "shop trả" ship'} />
         <Line sign="−" label="Chi phí hoạt động" value={s.operatingExpense} muted={!s.operatingExpense} />
         <Line sign="+" label="Thu nhập khác" value={s.otherIncome} muted={!s.otherIncome} />
         <Line strong label="Lợi nhuận ròng" value={s.netProfit} />
@@ -289,6 +290,7 @@ function CashFlowCard({ s }: { s: DashboardSummary }) {
         <Line strong label="Tổng tiền vào" value={s.cashIn} />
         <div className="px-3 py-1.5 text-xs font-black uppercase text-rose-700 bg-rose-50">Tiền ra</div>
         <Line sign="−" label="Nhập hàng" value={s.totalCost} hint="Theo phiếu nhập hoàn tất" />
+        <Line sign="−" label="Phí ship shop trả" value={s.shippingExpense} muted={!s.shippingExpense} />
         <Line sign="−" label="Chi phí hoạt động" value={s.operatingExpense} muted={!s.operatingExpense} />
         <Line sign="−" label="Hoàn tiền khách" value={s.returnRefunds} muted={!s.returnRefunds} />
         <Line sign="−" label="Chi phí sửa hàng" value={s.repairCost} muted={!s.repairCost} />
@@ -343,6 +345,7 @@ function FormulaNote() {
       </summary>
       <ul className="mt-3 space-y-1.5 text-slate-700 list-disc pl-5">
         <li><strong>Doanh thu</strong> chỉ tính đơn đã thanh toán và không bị hủy, ghi nhận theo ngày khách trả tiền.</li>
+        <li><strong>Phí ship người nhận trả</strong> là tiền thu hộ để trả cho đơn vị vận chuyển, không tính vào doanh thu. <strong>Phí ship shop trả</strong> là chi phí, được trừ vào lợi nhuận.</li>
         <li><strong>Giá vốn</strong> lấy theo giá nhập tại thời điểm bán; hàng tốt khách trả về kho được trừ lại, hàng lỗi vẫn tính là lỗ.</li>
         <li><strong>Tiền nhập hàng</strong> không trừ thẳng vào lợi nhuận (vì hàng còn trong kho), mà được tính dần qua giá vốn khi bán ra. Tiền này vẫn nằm trong <strong>Dòng tiền</strong>.</li>
         <li><strong>Chi phí hoạt động</strong> và <strong>Thu nhập khác</strong> lấy từ trang Thu chi khác theo ngày phát sinh.</li>

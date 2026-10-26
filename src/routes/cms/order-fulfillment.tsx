@@ -20,6 +20,8 @@ import { PageHeader, LoadingState } from '@/components/shop/page-header';
 import { Mascot } from '@/components/shop/mascot';
 import { ProductImage } from '@/components/shop/product-image';
 import { EntityPhotos } from '@/components/shop/entity-photos';
+import { EditOrderDialog, PAYER_LABELS } from '@/components/shop/edit-order-dialog';
+import { formatVND } from '@/lib/utils';
 import { formatDateTime } from '@/lib/utils';
 
 export const Route = createFileRoute('/cms/order-fulfillment')({
@@ -41,6 +43,7 @@ function OrderFulfillmentScreen() {
   // Modal packing & checklist
   const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [isEditOrderOpen, setIsEditOrderOpen] = useState(false);
   const [checklist, setChecklist] = useState<typeof DEFAULT_CHECKLIST>(DEFAULT_CHECKLIST);
   const [shippingProvider, setShippingProvider] = useState('GHTK');
   const [trackingCode, setTrackingCode] = useState('');
@@ -337,6 +340,20 @@ function OrderFulfillmentScreen() {
                 </div>
               </div>
 
+              {/* Phí giao hàng: ai trả, bao nhiêu */}
+              {activeOrder.orderType !== 'POS' && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/20 px-3 py-2 text-xs print-hidden">
+                  <span>
+                    Phí ship: <strong>{activeOrder.shippingFee > 0 ? formatVND(activeOrder.shippingFee) : 'chưa nhập'}</strong>
+                    {' • '}<strong>{PAYER_LABELS[activeOrder.shippingPayer || 'RECEIVER']}</strong>
+                    {' • '}Khách trả: <strong className="text-rose-600">{formatVND(activeOrder.totalAmount)}</strong>
+                  </span>
+                  <button type="button" onClick={() => setIsEditOrderOpen(true)} className="font-semibold text-rose-600 hover:underline">
+                    Sửa phí ship / người nhận
+                  </button>
+                </div>
+              )}
+
               {/* Thông tin đơn vị vận chuyển & Mã Tracking */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -425,6 +442,17 @@ function OrderFulfillmentScreen() {
           )}
         </DialogContent>
       </Dialog>
+      {isEditOrderOpen && activeOrder && (
+        <EditOrderDialog
+          order={activeOrder}
+          onClose={() => setIsEditOrderOpen(false)}
+          onSaved={o => {
+            setActiveOrder({ ...activeOrder, ...o });
+            setShippingProvider(o.shippingProvider || 'GHTK');
+            setTrackingCode(o.trackingCode || '');
+          }}
+        />
+      )}
     </div>
   );
 }

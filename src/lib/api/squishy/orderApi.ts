@@ -1,6 +1,20 @@
 import { apiClient } from '../client';
 import type { MediaItem } from './mediaApi';
 
+export type ShippingPayer = 'RECEIVER' | 'SENDER';
+
+export interface UpdateOrderInfoInput {
+  customerName?: string;
+  customerPhone?: string;
+  shippingAddress?: string;
+  note?: string;
+  shippingProvider?: string;
+  trackingCode?: string;
+  shippingFee: number;
+  shippingPayer: ShippingPayer;
+  discountAmount: number;
+}
+
 export interface OrderDetailItem {
   id: string;
   productId: string;
@@ -31,7 +45,10 @@ export interface Order {
   shippingAddress?: string;
   shippingProvider?: string;
   trackingCode?: string;
+  /** Phí trả cho đơn vị vận chuyển */
   shippingFee: number;
+  /** RECEIVER: khách trả (cộng vào tổng) | SENDER: shop trả (chi phí của shop) */
+  shippingPayer: ShippingPayer;
 
   // Khâu chuẩn bị & đóng gói (Fulfillment)
   preparationStatus: string; // PENDING, PREPARING, PACKED, SHIPPED
@@ -60,6 +77,7 @@ export interface CreateOrderInput {
   shippingProvider?: string;
   trackingCode?: string;
   shippingFee?: number;
+  shippingPayer?: ShippingPayer;
   items: {
     productId: string;
     variantId?: string;
@@ -108,6 +126,11 @@ export const orderApi = {
       `/Order/${id}/status`,
       { status, paymentStatus }
     );
+  },
+
+  /** Sửa đơn khi nhập sai (người nhận, phí ship, người trả ship, giảm giá, vận chuyển) */
+  updateInfo: async (id: string, data: UpdateOrderInfoInput) => {
+    return apiClient.put<any, { isSuccess: boolean; data: Order; message: string }>(`/Order/${id}`, data);
   },
 
   updateFulfillment: async (id: string, data: UpdateFulfillmentInput) => {

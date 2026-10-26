@@ -14,7 +14,8 @@ import {
   Storefront,
   MapPin,
   ArrowUUpLeft,
-  ShoppingCart
+  ShoppingCart,
+  PencilSimple
 } from '@phosphor-icons/react';
 
 import { orderApi, type Order } from '@/lib/api/squishy/orderApi';
@@ -24,6 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader, EmptyState, LoadingState } from '@/components/shop/page-header';
 import { EntityPhotos } from '@/components/shop/entity-photos';
+import { EditOrderDialog } from '@/components/shop/edit-order-dialog';
 import { cn, formatDateTime, formatVND, getFileUrl } from '@/lib/utils';
 
 export const Route = createFileRoute('/cms/orders')({
@@ -104,6 +106,7 @@ function OrdersScreen() {
 
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [previewProofUrl, setPreviewProofUrl] = useState<string | null>(null);
@@ -332,9 +335,16 @@ function OrdersScreen() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center justify-between gap-2 pr-8">
               <span>Đơn hàng: {selectedOrder?.orderCode}</span>
-              <Button variant="outline" size="sm" onClick={() => window.print()} className="rounded-lg text-xs print-hidden">
-                <Printer className="w-4 h-4 mr-1" /> In hóa đơn
-              </Button>
+              <span className="flex gap-1.5 print-hidden">
+                {selectedOrder && selectedOrder.orderStatus !== 'CANCELLED' && selectedOrder.orderStatus !== 'RETURNED' && (
+                  <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)} className="rounded-lg text-xs">
+                    <PencilSimple className="w-4 h-4 mr-1" /> Sửa đơn
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={() => window.print()} className="rounded-lg text-xs">
+                  <Printer className="w-4 h-4 mr-1" /> In hóa đơn
+                </Button>
+              </span>
             </DialogTitle>
           </DialogHeader>
 
@@ -410,9 +420,9 @@ function OrdersScreen() {
                   <span className="text-muted-foreground">Tạm tính</span>
                   <span>{formatVND(selectedOrder.subTotal)}</span>
                 </div>
-                {selectedOrder.shippingFee > 0 && (
+                {selectedOrder.orderType !== 'POS' && selectedOrder.shippingPayer !== 'SENDER' && (
                   <div className="flex justify-between text-blue-600">
-                    <span>Phí vận chuyển</span>
+                    <span>Phí ship (người nhận trả)</span>
                     <span>+{formatVND(selectedOrder.shippingFee)}</span>
                   </div>
                 )}
@@ -426,6 +436,12 @@ function OrdersScreen() {
                   <span>Tổng thanh toán</span>
                   <span className="text-rose-600">{formatVND(selectedOrder.totalAmount)}</span>
                 </div>
+                {selectedOrder.orderType !== 'POS' && selectedOrder.shippingPayer === 'SENDER' && (
+                  <div className="flex justify-between text-muted-foreground print-hidden">
+                    <span>Phí ship shop trả (chi phí, không tính vào tiền khách)</span>
+                    <span>{selectedOrder.shippingFee > 0 ? formatVND(selectedOrder.shippingFee) : 'chưa nhập'}</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 border-t space-y-3 print-hidden">
@@ -504,6 +520,9 @@ function OrdersScreen() {
           )}
         </DialogContent>
       </Dialog>
+      {isEditOpen && selectedOrder && (
+        <EditOrderDialog order={selectedOrder} onClose={() => setIsEditOpen(false)} onSaved={o => setSelectedOrder(o)} />
+      )}
     </div>
   );
 }

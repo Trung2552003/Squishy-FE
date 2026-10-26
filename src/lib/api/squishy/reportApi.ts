@@ -12,7 +12,10 @@ export interface CategoryAmount {
 /** Xem công thức ở DashboardSummaryDto (backend). */
 export interface DashboardSummary {
   salesRevenue: number;
+  /** Ship khách trả: thu hộ, đã trả lại cho đơn vị vận chuyển (không tính doanh thu) */
   shippingFeeCollected: number;
+  /** Ship shop trả: chi phí */
+  shippingExpense: number;
   returnRefunds: number;
   returnExtraCharges: number;
   totalRevenue: number;
