@@ -157,10 +157,8 @@ function GoodsReceiptScreen() {
   });
 
   // Dòng mới cho 1 sản phẩm: có màu thì chọn sẵn màu đầu tiên, giá nhập gợi ý = giá vốn hiện tại
-  const rowFor = (product: Product): ReceiptItem => {
-    const variant = product.variants?.[0];
-    return { productId: product.id, variantId: variant?.id, quantity: 10, unitPrice: (variant?.costPrice || product.costPrice) || 0 };
-  };
+  // Dòng mới cho 1 sản phẩm. Sản phẩm có màu: để trống màu, bắt người nhập tự chọn để không nhập nhầm màu
+  const rowFor = (product: Product): ReceiptItem => ({ productId: product.id, variantId: undefined, quantity: 10, unitPrice: product.costPrice || 0 });
 
   const newRow = (): ReceiptItem | null => {
     // Ưu tiên sản phẩm chưa có trong phiếu
@@ -234,7 +232,8 @@ function GoodsReceiptScreen() {
     }
     const missingColor = receiptItems.find(i => !i.variantId && products.find(p => p.id === i.productId)?.variants?.length);
     if (missingColor) {
-      toast.error('Vui lòng chọn màu cho các sản phẩm có phân loại.');
+      const name = products.find(p => p.id === missingColor.productId)?.name;
+      toast.error(`Vui lòng chọn màu cho "${name}" (ô màu viền đỏ).`);
       return;
     }
 
@@ -541,9 +540,10 @@ function GoodsReceiptScreen() {
                             value={item.variantId || ''}
                             onChange={e => updateItem(idx, 'variantId', e.target.value)}
                             aria-label="Màu"
-                            className="h-10 sm:h-9 text-base sm:text-sm min-w-0 min-[480px]:w-32"
+                            aria-invalid={!item.variantId}
+                            className={cn('h-10 sm:h-9 text-base sm:text-sm min-w-0 min-[480px]:w-36', !item.variantId && '!border-rose-500 !bg-rose-50 text-rose-700')}
                           >
-                            <option value="" disabled>-- Màu --</option>
+                            <option value="" disabled>-- Chọn màu --</option>
                             {variants.map(v => (
                               <option key={v.id} value={v.id}>{v.name} (tồn {v.currentStock}){v.isActive ? '' : ' • ngừng bán'}</option>
                             ))}
