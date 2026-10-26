@@ -25,7 +25,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { VariantEditor, toVariantDrafts, type VariantDraft } from '@/components/shop/variant-editor';
 import { PageHeader, EmptyState, LoadingState } from '@/components/shop/page-header';
 import { ProductImage } from '@/components/shop/product-image';
-import { cn, formatVND, getFileUrl } from '@/lib/utils';
+import { cn, formatVND, getFileUrl, getThumbUrl } from '@/lib/utils';
 
 export const Route = createFileRoute('/cms/products')({
   component: ProductsScreen,
@@ -655,7 +655,7 @@ function ProductsScreen() {
                       )}
                     >
                       <button type="button" onClick={() => setFormMainImageUrl(imgUrl)} className="w-full h-full" title="Đặt làm ảnh chính">
-                        <img src={getFileUrl(imgUrl)} alt={`Ảnh ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={getThumbUrl(imgUrl, 160)} loading="lazy" alt={`Ảnh ${idx + 1}`} className="w-full h-full object-cover" />
                       </button>
                       <button
                         type="button"

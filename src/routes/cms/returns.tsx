@@ -35,7 +35,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader, EmptyState, LoadingState } from '@/components/shop/page-header';
 import { PhotoPicker } from '@/components/shop/photo-picker';
 import { ProductImage } from '@/components/shop/product-image';
-import { cn, formatDateTime, formatVND, getFileUrl } from '@/lib/utils';
+import { cn, formatDateTime, formatVND, getFileUrl, getThumbUrl } from '@/lib/utils';
 
 export const Route = createFileRoute('/cms/returns')({
   validateSearch: (search: Record<string, unknown>): { order?: string } => ({
@@ -969,7 +969,7 @@ function ReturnDetailDialog({ id, onClose }: { id: string | null; onClose: () =>
                 <div className="flex flex-wrap gap-2">
                   {r.images.map(img => (
                     <button key={img.id} type="button" onClick={() => setPreviewUrl(getFileUrl(img.url))}>
-                      <img src={getFileUrl(img.url)} alt="" className="w-16 h-16 rounded-lg object-cover border hover:opacity-90" />
+                      <img src={getThumbUrl(img.url, 160)} loading="lazy" alt="" className="w-16 h-16 rounded-lg object-cover border hover:opacity-90" />
                     </button>
                   ))}
                   <PhotoPicker disabled={isUploading} busyText="Đang tải" onFiles={uploadPhotos} />

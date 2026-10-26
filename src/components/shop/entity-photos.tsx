@@ -7,7 +7,7 @@ import { mediaApi } from '@/lib/api/squishy/mediaApi';
 import { orderApi } from '@/lib/api/squishy/orderApi';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PhotoPicker } from '@/components/shop/photo-picker';
-import { getFileUrl } from '@/lib/utils';
+import { getThumbUrl } from '@/lib/utils';
 
 type PhotoEntityType = 'ORDER_PAYMENT' | 'ORDER_SHIPPING' | 'CASH_TXN';
 
@@ -77,8 +77,8 @@ export function EntityPhotos({ entityId, type, title, hint, readOnly, onChanged 
       <div className="flex flex-wrap gap-2">
         {photos.map(img => (
           <div key={img.id} className="relative">
-            <button type="button" onClick={() => setPreview(getFileUrl(img.url))}>
-              <img src={getFileUrl(img.url)} alt={title} className="w-16 h-16 rounded-lg object-cover border hover:opacity-90" />
+            <button type="button" onClick={() => setPreview(getThumbUrl(img.url, 1280))}>
+              <img src={getThumbUrl(img.url, 160)} loading="lazy" alt={title} className="w-16 h-16 rounded-lg object-cover border hover:opacity-90" />
             </button>
             {!readOnly && (
               <button

@@ -582,7 +582,7 @@ function PosScreen() {
                     )}
 
                     <div className="w-full aspect-square rounded-xl overflow-hidden border-2 border-black bg-rose-50 mb-2 relative">
-                      <ProductImage src={product.mainImageUrl} alt={product.name} className="w-full h-full" />
+                      <ProductImage width={320} src={product.mainImageUrl} alt={product.name} className="w-full h-full" />
                       <span className={cn(
                         'absolute bottom-1 left-1 text-[10px] font-black px-1.5 py-0.5 rounded-md border-1.5 border-black',
                         isOutOfStock ? 'bg-[#FECDD3]' : available <= product.minStockAlert ? 'bg-[#FEF08A]' : 'bg-[#BBF7D0]'
@@ -875,7 +875,7 @@ function PosScreen() {
                     }}
                     className="rounded-xl border-2 border-slate-200 hover:border-slate-900 p-1.5 text-left disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <ProductImage src={v.imageUrl || pickingProduct.mainImageUrl} alt={v.name} className="w-full aspect-square rounded-lg" />
+                    <ProductImage width={320} src={v.imageUrl || pickingProduct.mainImageUrl} alt={v.name} className="w-full aspect-square rounded-lg" />
                     <span className="flex items-center gap-1 mt-1 text-xs font-bold">
                       <span className="w-3 h-3 rounded-full border border-black/20 shrink-0" style={{ background: v.colorHex || '#e2e8f0' }} />
                       <span className="truncate">{v.name}</span>

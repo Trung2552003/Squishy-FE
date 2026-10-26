@@ -456,7 +456,7 @@ function CampaignDialog({ campaign, onClose }: { campaign: PreorderCampaign | nu
                           aria-pressed={checked}
                           className={cn('relative rounded-xl border-2 p-1 text-left transition-colors', checked ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-400')}
                         >
-                          <ProductImage src={i.imageUrl} alt={i.name} className={cn('w-full aspect-square rounded-lg', !i.isActive && 'opacity-50')} />
+                          <ProductImage width={320} src={i.imageUrl} alt={i.name} className={cn('w-full aspect-square rounded-lg', !i.isActive && 'opacity-50')} />
                           <span className="block text-xs font-semibold leading-tight mt-1 line-clamp-2">{i.name}</span>
                           {!i.isActive && <span className="block text-[10px] font-bold text-amber-700">Đang ẩn: khách không thấy</span>}
                           <span className={cn('absolute top-1.5 right-1.5 w-5 h-5 rounded-md border-2 grid place-items-center text-white text-xs', checked ? 'bg-emerald-500 border-emerald-600' : 'bg-white/90 border-slate-300')}>
@@ -798,7 +798,7 @@ function ItemsTab() {
         {items.map(item => (
           <div key={item.id} className={cn('doodle-card p-2.5 flex flex-col gap-2', !item.isActive && 'opacity-70')}>
             <div className="relative">
-              <ProductImage src={item.imageUrl} alt={item.name} className="w-full aspect-[4/5] rounded-xl border" />
+              <ProductImage width={320} src={item.imageUrl} alt={item.name} className="w-full aspect-[4/5] rounded-xl border" />
               {!item.isActive && <span className="absolute top-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-white">Đang ẩn</span>}
             </div>
             <div className="flex-1">

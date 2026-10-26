@@ -3,7 +3,7 @@ import type { UserDto } from '@/lib/api/system/user'
 import { Button } from '@/components/ui/button'
 import { PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react'
 import { Checkbox } from '@/components/ui/checkbox'
-import { cn, getAvatarColor, getFileUrl } from '@/lib/utils'
+import { cn, getAvatarColor, getThumbUrl } from '@/lib/utils'
 import { userApi } from '@/lib/api/system/user'
 import { useQuery } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -78,7 +78,7 @@ export const getColumns = ({ onEdit, onDelete, checkPermission }: ColumnProps): 
         <div className="flex items-center gap-2.5 w-full">
           <div className={cn("h-7 w-7 rounded-full border border-border overflow-hidden flex items-center justify-center shrink-0 shadow-sm", user.avatarPath ? "bg-muted/50" : getAvatarColor(user.userName))}>
             {user.avatarPath ? (
-              <img src={getFileUrl(user.avatarPath)} alt="avatar" className="w-full h-full object-cover" />
+              <img src={getThumbUrl(user.avatarPath, 160)} alt="avatar" className="w-full h-full object-cover" />
             ) : (
               <span className="text-xs font-bold text-white">{user.userName.charAt(0).toUpperCase()}</span>
             )}

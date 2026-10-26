@@ -5,7 +5,7 @@ import { Plus, Trash, ImageSquare, Palette } from '@phosphor-icons/react';
 import { mediaApi } from '@/lib/api/squishy/mediaApi';
 import type { ProductVariant } from '@/lib/api/squishy/productApi';
 import { Input } from '@/components/ui/input';
-import { cn, getFileUrl } from '@/lib/utils';
+import { cn, getThumbUrl } from '@/lib/utils';
 
 export interface VariantDraft {
   key: string;
@@ -130,7 +130,7 @@ export function VariantEditor({ value, onChange, stockToMove }: VariantEditorPro
                   className="h-9 rounded-lg flex-1 min-w-28"
                 />
                 <label className={cn('w-9 h-9 rounded-lg border-2 border-dashed grid place-items-center overflow-hidden cursor-pointer shrink-0', uploadingKey === v.key && 'opacity-50')} title="Ảnh của màu">
-                  {v.imageUrl ? <img src={getFileUrl(v.imageUrl)} alt="" className="w-full h-full object-cover" /> : <ImageSquare className="w-4 h-4 text-slate-400" />}
+                  {v.imageUrl ? <img src={getThumbUrl(v.imageUrl, 160)} alt="" className="w-full h-full object-cover" /> : <ImageSquare className="w-4 h-4 text-slate-400" />}
                   <input
                     type="file"
                     accept="image/*"

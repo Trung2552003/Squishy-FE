@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { cn, getFileUrl } from '@/lib/utils'
+import { cn, getThumbUrl } from '@/lib/utils'
 import { ProfileForm } from '@/components/profile-form'
 import { ChangePasswordForm } from '@/components/change-password-form'
 
@@ -405,7 +405,7 @@ function CmsLayout() {
                   <button className="rounded-full h-9 pl-1 pr-2 sm:pr-3 flex items-center gap-2 hover:bg-slate-100 transition-colors cursor-pointer">
                     <Avatar className="w-7 h-7 border-1.5 border-black">
                       {avatarPath ? (
-                        <img src={getFileUrl(avatarPath)} alt="avatar" className="w-full h-full object-cover" />
+                        <img src={getThumbUrl(avatarPath, 160)} alt="avatar" className="w-full h-full object-cover" />
                       ) : (
                         <AvatarFallback className="bg-[#BAE6FD] text-black font-black text-[11px]">
                           {initial}

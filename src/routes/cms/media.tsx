@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader, LoadingState } from '@/components/shop/page-header';
-import { cn, getFileUrl } from '@/lib/utils';
+import { cn, getFileUrl, getThumbUrl } from '@/lib/utils';
 
 const isVideoItem = (item: MediaItem) => Boolean(item.durationSeconds || item.url.match(/\.(mp4|webm|mov|mkv)$/i));
 
@@ -227,7 +227,7 @@ function MediaLibraryScreen() {
                     </div>
                   ) : (
                     <img
-                      src={getFileUrl(item.url)}
+                      src={getThumbUrl(item.url, 320)}
                       alt={item.fileName || 'Ảnh'}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

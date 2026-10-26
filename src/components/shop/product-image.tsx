@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { Sparkle } from '@phosphor-icons/react'
-import { cn, getFileUrl } from '@/lib/utils'
+import { cn, getThumbSrcSet, getThumbUrl } from '@/lib/utils'
 
 interface ProductImageProps {
   src?: string | null
   alt?: string
   className?: string
   iconClassName?: string
+  /** Bề rộng hiển thị ước chừng (px) để lấy ảnh thu nhỏ vừa đủ: 160 ô nhỏ, 320 thẻ sản phẩm, 640 ảnh chi tiết */
+  width?: number
 }
 
-// Ảnh sản phẩm: tự ghép domain backend cho đường dẫn /uploads và hiện ô thay thế khi thiếu/lỗi ảnh
-export function ProductImage({ src, alt = '', className, iconClassName }: ProductImageProps) {
+// Ảnh sản phẩm: lấy bản thu nhỏ theo cỡ hiển thị, tự ghép domain backend và hiện ô thay thế khi thiếu/lỗi ảnh
+export function ProductImage({ src, alt = '', className, iconClassName, width = 160 }: ProductImageProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
-  const url = getFileUrl(src)
+  const url = getThumbUrl(src, width)
 
   if (!url || failedSrc === url) {
     return (
@@ -25,6 +27,7 @@ export function ProductImage({ src, alt = '', className, iconClassName }: Produc
   return (
     <img
       src={url}
+      srcSet={getThumbSrcSet(src, width)}
       alt={alt}
       loading="lazy"
       decoding="async"

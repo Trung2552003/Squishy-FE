@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+import { compressImage } from '@/lib/compress-image';
 
 export interface MediaItem {
   id: string;
@@ -27,7 +28,7 @@ export const mediaApi = {
 
   uploadImage: async (file: File, entityType: string = 'PRODUCT', entityId?: string, isPrimary: boolean = false) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', await compressImage(file));
     return apiClient.postForm<any, { isSuccess: boolean; data: MediaItem; message: string }>(
       `/Media/upload-image?entityType=${entityType}${entityId ? `&entityId=${entityId}` : ''}&isPrimary=${isPrimary}`,
       formData

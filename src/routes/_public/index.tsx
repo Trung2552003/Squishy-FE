@@ -468,6 +468,7 @@ function SquishyStorefront() {
                   <div>
                     <div className="w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden border-2 border-black bg-rose-50 relative mb-2.5 sm:mb-3 shadow-[1.5px_1.5px_0px_#000]">
                       <ProductImage
+                        width={320}
                         src={product.mainImageUrl}
                         alt={product.name}
                         className={cn('w-full h-full group-hover:scale-105 transition-transform duration-300', isOut && 'grayscale opacity-70')}
@@ -908,6 +909,7 @@ function SquishyStorefront() {
                         {/* Main Big Photo */}
                         <div className="w-full aspect-square rounded-2xl border-2.5 border-black overflow-hidden bg-rose-50 shadow-[3px_3px_0px_#000] relative">
                           <ProductImage
+                            width={640}
                             src={currentImg}
                             alt={p.name}
                             className="w-full h-full object-cover"

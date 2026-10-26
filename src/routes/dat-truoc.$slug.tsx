@@ -319,7 +319,7 @@ function CampaignOrderForm({ campaign, onStale }: { campaign: PreorderCampaignPa
                       aria-label={isOpen ? `${isSelected ? 'Bỏ chọn' : 'Chọn'} ${item.name}` : `Xem ảnh lớn ${item.name}`}
                       className="block w-full aspect-[4/5] rounded-xl overflow-hidden border-2 border-black bg-white"
                     >
-                      <ProductImage src={item.imageUrl} alt={item.name} className="w-full h-full" />
+                      <ProductImage width={320} src={item.imageUrl} alt={item.name} className="w-full h-full" />
                     </button>
                     <TagBadge tag={item.tag} />
                     {isOpen && (
