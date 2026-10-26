@@ -74,8 +74,11 @@ function PaymentBadge({ order }: { order: Order }) {
   );
 }
 
-function PrepBadge({ status }: { status?: string }) {
-  const info = PREP_LABELS[status || ''] || { label: 'Chưa soạn', className: 'bg-muted text-muted-foreground' };
+function PrepBadge({ order }: { order: Order }) {
+  // Đơn tại quầy: khách nhận hàng ngay, không qua khâu đóng gói
+  const info = order.orderType === 'POS'
+    ? { label: 'Đã giao tại quầy', className: 'bg-emerald-50 text-emerald-700' }
+    : PREP_LABELS[order.preparationStatus || ''] || { label: 'Chưa soạn', className: 'bg-muted text-muted-foreground' };
   return (
     <span className={cn('inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap', info.className)}>
       {info.label}
@@ -251,7 +254,7 @@ function OrdersScreen() {
                   <div className="flex flex-wrap items-center gap-1.5">
                     <TypeBadge order={order} />
                     <PaymentBadge order={order} />
-                    <PrepBadge status={order.preparationStatus} />
+                    <PrepBadge order={order} />
                     {order.paymentProofImageUrl && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600">
                         <ImageIcon className="w-3.5 h-3.5" /> Có ảnh bill
@@ -296,7 +299,7 @@ function OrdersScreen() {
                       <td className="py-3 px-3 xl:px-4"><TypeBadge order={order} /></td>
                       <td className="py-3 px-3 xl:px-4 font-bold text-rose-600 whitespace-nowrap">{formatVND(order.totalAmount)}</td>
                       <td className="py-3 px-3 xl:px-4"><PaymentBadge order={order} /></td>
-                      <td className="py-3 px-3 xl:px-4"><PrepBadge status={order.preparationStatus} /></td>
+                      <td className="py-3 px-3 xl:px-4"><PrepBadge order={order} /></td>
                       <td className="py-3 px-3 xl:px-4 hidden xl:table-cell">
                         {order.paymentProofImageUrl ? (
                           <button
@@ -388,7 +391,7 @@ function OrdersScreen() {
                 <div className="sm:col-span-2 flex flex-wrap gap-1.5">
                   <TypeBadge order={selectedOrder} />
                   <PaymentBadge order={selectedOrder} />
-                  <PrepBadge status={selectedOrder.preparationStatus} />
+                  <PrepBadge order={selectedOrder} />
                 </div>
 
                 {selectedOrder.note && (

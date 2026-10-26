@@ -124,7 +124,7 @@ function OrderFulfillmentScreen() {
       <PageHeader
         emoji="📋"
         title="Chuẩn bị & Đóng gói"
-        description="Soát hàng, bọc xốp chống sốc, tặng kèm sticker Kawaii và giao Shipper."
+        description="Đơn khách đặt trên web cần giao: soát hàng, bọc xốp chống sốc, tặng kèm sticker và giao shipper. Đơn bán tại quầy không hiện ở đây."
       />
 
       {/* Tabs Filter */}
