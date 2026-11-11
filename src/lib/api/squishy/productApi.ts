@@ -44,6 +44,9 @@ export interface SaveProductVariantInput {
   isActive: boolean;
   /** Tồn đầu kỳ, chỉ dùng khi tạo màu mới */
   initialStock?: number;
+  /** Màu đã có: số lượng sửa tay + số lượng lúc mở form (backend cộng/trừ phần chênh lệch) */
+  stock?: number;
+  originalStock?: number;
 }
 
 export interface ProductFilter {
@@ -70,6 +73,8 @@ export interface CreateUpdateProductInput {
   imageUrls?: string[];
   videoUrls?: string[];
   /** bỏ trống = không đổi phân loại */
+  /** Tồn kho lúc mở form sửa */
+  originalStock?: number;
   variants?: SaveProductVariantInput[];
 }
 

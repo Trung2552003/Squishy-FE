@@ -16,8 +16,10 @@ export interface VariantDraft {
   isActive: boolean;
   /** Tồn đầu kỳ cho màu mới */
   initialStock: number;
-  /** Tồn hiện tại (màu đã lưu) */
+  /** Tồn lúc mở form (màu đã lưu) */
   currentStock?: number;
+  /** Số lượng sửa tay (màu đã lưu), mặc định = currentStock */
+  stock?: number;
 }
 
 const PRESETS: { name: string; hex: string }[] = [
@@ -44,6 +46,7 @@ export const toVariantDrafts = (variants?: ProductVariant[]): VariantDraft[] =>
     isActive: v.isActive,
     initialStock: 0,
     currentStock: v.currentStock,
+    stock: v.currentStock,
   }));
 
 interface VariantEditorProps {
@@ -66,6 +69,7 @@ export function VariantEditor({ value, onChange, stockToMove }: VariantEditorPro
 
   const remove = (v: VariantDraft) => {
     if ((v.currentStock ?? 0) > 0) {
+      // Tồn đã lưu > 0: phải lưu số lượng về 0 trước rồi mới xóa được
       toast.error(`Màu "${v.name}" còn ${v.currentStock} chiếc nên không xóa được. Hãy tắt "Đang bán".`);
       return;
     }
@@ -144,7 +148,23 @@ export function VariantEditor({ value, onChange, stockToMove }: VariantEditorPro
                   />
                 </label>
                 {v.id ? (
-                  <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Tồn: {v.currentStock ?? 0}</span>
+                  <label className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
+                    Tồn
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={v.stock ?? 0}
+                      onChange={e => update(v.key, { stock: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                      aria-label={`Số lượng màu ${v.name}`}
+                      className={cn('h-9 w-16 rounded-lg text-right font-semibold', v.stock !== v.currentStock && 'border-amber-500 bg-amber-50')}
+                    />
+                    {v.stock !== v.currentStock && (
+                      <span className="font-semibold text-amber-700">
+                        {(v.stock ?? 0) > (v.currentStock ?? 0) ? '+' : ''}{(v.stock ?? 0) - (v.currentStock ?? 0)}
+                      </span>
+                    )}
+                  </label>
                 ) : (
                   <label className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
                     Tồn đầu
@@ -175,7 +195,8 @@ export function VariantEditor({ value, onChange, stockToMove }: VariantEditorPro
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            Tồn kho sản phẩm = tổng các màu. Sau khi lưu, số lượng từng màu thay đổi qua Phiếu nhập kho và bán hàng. Màu còn hàng không xóa được, chỉ tắt "Đang bán".
+            Tồn kho sản phẩm = tổng các màu. Hàng mua về nên nhập qua Phiếu nhập kho (để tính đúng giá vốn); ô "Tồn" chỉ dùng khi kiểm kho
+            thấy lệch, mỗi lần sửa được ghi vào thẻ kho. Màu còn hàng không xóa được, chỉ tắt "Đang bán".
           </p>
         </>
       )}

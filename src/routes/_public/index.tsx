@@ -121,6 +121,7 @@ function SquishyStorefront() {
 
   const { data: productsRes, isLoading } = useQuery({
     queryKey: ['squishyPublicProducts', selectedCategory],
+    staleTime: 30_000,
     queryFn: () => productApi.getActive(selectedCategory === 'ALL' ? undefined : selectedCategory),
   });
   const products = productsRes?.data || [];

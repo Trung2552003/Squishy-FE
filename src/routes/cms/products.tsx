@@ -103,6 +103,7 @@ function ProductsScreen() {
 
   const { data: productsRes, isLoading } = useQuery({
     queryKey: ['squishyProductsPaged', debouncedKeyword, selectedCatId, lowStockOnly, pageIndex],
+    staleTime: 0, // tồn kho đổi liên tục (bán, nhập, đổi trả): luôn lấy số mới khi mở trang
     queryFn: () => productApi.getPaged({
       keyword: debouncedKeyword,
       categoryId: selectedCatId || undefined,
@@ -231,6 +232,7 @@ function ProductsScreen() {
       costPrice: formCostPrice,
       salePrice: formSalePrice,
       currentStock: formCurrentStock,
+      originalStock: editingProduct && !editingProduct.variants?.length ? editingProduct.currentStock : undefined,
       minStockAlert: formMinStockAlert,
       squishyType: formSquishyType.trim(),
       mainImageUrl: formMainImageUrl || uploadedImages[0] || '',
@@ -244,6 +246,8 @@ function ProductsScreen() {
         imageUrl: v.imageUrl,
         isActive: v.isActive,
         initialStock: v.id ? undefined : v.initialStock,
+        stock: v.id ? v.stock : undefined,
+        originalStock: v.id ? v.currentStock : undefined,
       })),
     };
 
@@ -596,7 +600,7 @@ function ProductsScreen() {
                 {formVariants.length > 0 ? (
                   <div id="p-stock" className={cn(fieldClass, 'flex items-center px-3 border bg-muted/40 font-semibold')}>
                     {editingProduct && editingProduct.variants?.length
-                      ? formVariants.reduce((a, v) => a + (v.currentStock ?? 0), 0) + formVariants.filter(v => !v.id).reduce((a, v) => a + v.initialStock, 0)
+                      ? formVariants.reduce((a, v) => a + (v.id ? v.stock ?? 0 : v.initialStock), 0)
                       : formCurrentStock + formVariants.reduce((a, v) => a + v.initialStock, 0)}{' '}
                     <span className="ml-1 text-xs font-normal text-muted-foreground">(tổng các màu)</span>
                   </div>

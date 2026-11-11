@@ -41,6 +41,7 @@ const STOCK_TYPE_LABELS: Record<string, { label: string; className: string }> = 
   ORDER_CANCEL: { label: 'Hủy đơn, hoàn kho (+)', className: 'bg-emerald-100 text-emerald-700' },
   OPENING: { label: 'Tồn đầu kỳ (+)', className: 'bg-blue-100 text-blue-700' },
   VARIANT_SPLIT: { label: 'Chia tồn sang màu', className: 'bg-violet-100 text-violet-700' },
+  ADJUST: { label: 'Sửa tay số lượng (±)', className: 'bg-amber-100 text-amber-800' },
 };
 
 function ReceiptStatusBadge({ status }: { status: string }) {
@@ -92,6 +93,7 @@ function GoodsReceiptScreen() {
 
   const { data: productsRes, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['squishyActiveProductsAll'],
+    staleTime: 0, // tồn kho đổi liên tục (bán, nhập, đổi trả): luôn lấy số mới khi mở trang
     queryFn: () => productApi.getActive(),
   });
   const products = productsRes?.data || [];
@@ -100,6 +102,7 @@ function GoodsReceiptScreen() {
 
   const { data: stockLogsRes, isLoading: isLoadingStockLogs } = useQuery({
     queryKey: ['stockTransactions'],
+    staleTime: 0, // tồn kho đổi liên tục (bán, nhập, đổi trả): luôn lấy số mới khi mở trang
     queryFn: () => goodsReceiptApi.getStockTransactions(),
     enabled: activeTab === 'STOCK_LOG'
   });

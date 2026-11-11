@@ -88,6 +88,7 @@ function PosScreen() {
 
   const { data: productsRes, isLoading: isLoadingProducts, isFetching, refetch: refetchProducts } = useQuery({
     queryKey: ['squishyActiveProducts', selectedCategory],
+    staleTime: 0, // tồn kho đổi liên tục (bán, nhập, đổi trả): luôn lấy số mới khi mở trang
     queryFn: () => productApi.getActive(selectedCategory === 'ALL' ? undefined : selectedCategory),
   });
   const products = productsRes?.data || [];

@@ -352,6 +352,7 @@ function CreateReturnDialog({ initialOrderCode, onClose, onCreated }: {
 
   const { data: productsRes } = useQuery({
     queryKey: ['squishyActiveProductsAll'],
+    staleTime: 0, // tồn kho đổi liên tục (bán, nhập, đổi trả): luôn lấy số mới khi mở trang
     queryFn: () => productApi.getActive(),
     enabled: requestType === 'EXCHANGE',
   });
